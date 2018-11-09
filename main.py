@@ -1,5 +1,6 @@
 from flask import Flask
 from flask import render_template
+from flask import request
 
 import forms
 
@@ -12,9 +13,14 @@ def index():
     return render_template("index.html", title=title)
 
 
-@app.route("/new_widget")
+@app.route("/new_widget", methods=['GET', 'POST'])
 def new_widget():
-    widget = forms.Widget()
+    widget = forms.Widget(request.form)
+
+    if request.method == 'POST':
+        print(widget.name.data)
+        print(widget.html.data)
+
     title = "New Widget"
     return render_template("widget.html", title=title, form=widget)
 
