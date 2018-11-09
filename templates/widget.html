@@ -9,10 +9,10 @@
     {% from '_macro.html' import render_field %}
 
     <form>
-        {{ render_field(form.name) }}
-        {{ render_field(form.created_by) }}
-        {{ render_field(form.html) }}
-        {{ render_field(form.save_address) }}
+        {{ render_field(form.name, class='form-control') }}
+        {{ render_field(form.created_by, class='form-control' ) }}
+        {{ render_field(form.html, id='code' ) }}
+        {{ render_field(form.save_address, class='form-control') }}
     </form>
 
 {% endblock %}
