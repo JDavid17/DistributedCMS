@@ -17,7 +17,7 @@ def index():
 def new_widget():
     widget = forms.Widget(request.form)
 
-    if request.method == 'POST':
+    if request.method == 'POST' and widget.validate():
         print(widget.name.data)
         print(widget.html.data)
 
