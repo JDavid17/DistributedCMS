@@ -22,8 +22,10 @@ def new_widget():
     widget = forms.Widget(request.form)
 
     if request.method == 'POST' and widget.validate():
-        
-        pass
+        mongo.db.widget.insert({
+            "name": "{}".format(widget.name.data),
+            "html": "{}".format(widget.html.data)
+        })
 
     title = "New Widget"
     return render_template("widget.html", title=title, form=widget)
@@ -32,4 +34,6 @@ def new_widget():
 @app.route("/new_page")
 def new_page():
     title = "New Page"
-    return render_template("page.html", title=title)
+    widgets = mongo.db.widget.find()
+
+    return render_template("page.html", title=title, widgets=widgets)

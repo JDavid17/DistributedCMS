@@ -5,5 +5,15 @@
 {% endblock %}
 
 {% block content %}
-    <p>New Page </p>
+    {% for widget in widgets %}
+        <div class="card" style="width: 18rem;">
+          <div class="card-body">
+           <h5 class="card-title">{{ widget.name }}</h5>
+{#         <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>#}
+           <button type="button" class="btn btn-info" data-toggle="popover" title="Code" data-placement="left" data-content="{{ widget.html }}">Preview</button>
+           <a href="#" class="card-link">Select</a>
+           <a href="#" class="card-link">Delete</a>
+          </div>
+        </div>
+    {% endfor %}
 {% endblock %}
