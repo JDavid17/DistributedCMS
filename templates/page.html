@@ -5,15 +5,21 @@
 {% endblock %}
 
 {% block content %}
+    <div class="col-md-3 float-left">
     {% for widget in widgets %}
-        <div class="card" style="width: 18rem;">
+        <div class="card" >
           <div class="card-body">
            <h5 class="card-title">{{ widget.name }}</h5>
-{#         <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>#}
            <button type="button" class="btn btn-info" data-toggle="popover" title="Code" data-placement="left" data-content="{{ widget.html }}">Preview</button>
            <a href="#" class="card-link">Select</a>
            <a href="#" class="card-link">Delete</a>
           </div>
         </div>
     {% endfor %}
+    </div>
+    <div class="col-md-9 float-left">
+        <div class="w-100 h-100 p-3" style="background-color: #eee;">
+
+        </div>
+    </div>
 {% endblock %}

@@ -35,5 +35,13 @@ def new_widget():
 def new_page():
     title = "New Page"
     widgets = mongo.db.widget.find()
+    bs4_widgets = []
 
-    return render_template("page.html", title=title, widgets=widgets)
+    for widget in widgets:
+        bs4_widgets.append({
+            "name": "{}".format(widget['name']),
+            "html": "{}".format(BeautifulSoup(widget['html'], 'html.parser').prettify())
+        })
+
+    return render_template("page.html", title=title, widgets=bs4_widgets)
+
