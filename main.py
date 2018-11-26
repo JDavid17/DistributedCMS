@@ -1,15 +1,14 @@
+import glob
+import os
+
+from bs4 import BeautifulSoup
 from flask import Flask
 from flask import render_template
 from flask import request
-from bs4 import BeautifulSoup
-from flask_pymongo import PyMongo
-import glob, os
 
 import forms
 
 app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb://localhost:27017/CMS"
-mongo = PyMongo(app)
 
 
 @app.route("/")
@@ -23,10 +22,6 @@ def new_widget():
     widget = forms.Widget(request.form)
     os.chdir("/app/widgets")
     if request.method == 'POST' and widget.validate():
-        # mongo.db.widget.insert({
-        #     "name": "{}".format(widget.name.data),
-        #     "html": "{}".format(widget.html.data)
-        # })
         folder = open("{}.txt".format(widget.name.data), "w")
         folder.write("{}".format(widget.html.data))
         folder.close()
@@ -38,7 +33,14 @@ def new_widget():
 @app.route("/new_page")
 def new_page():
     title = "New Page"
-    # widgets = mongo.db.widget.find()
+    html_doc = """
+    <html>
+    <head></head>
+    <body class="container">
+        
+    </body>
+    </html>
+    """
     os.chdir("/app/widgets")
     bs4_widgets = []
 
