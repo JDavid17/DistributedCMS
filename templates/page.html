@@ -5,21 +5,48 @@
 {% endblock %}
 
 {% block content %}
-    <div class="col-md-3 float-left">
+    <div class="col-md-2 float-left">
     {% for widget in widgets %}
         <div class="card" >
           <div class="card-body">
            <h5 class="card-title">{{ widget.name }}</h5>
            <button type="button" class="btn btn-info" data-toggle="popover" title="Code" data-placement="left" data-content="{{ widget.html }}">Preview</button>
-           <a href="#" class="card-link">Select</a>
-           <a href="#" class="card-link">Delete</a>
+           <button type="button" class="btn btn-primary small" id="selectable" data-content="{{ widget.html }}" data-doc="{{ html_doc }}">Select</button>
+           <button type="button" class="btn btn-danger small" onclick="delete_btn(this)">Delete</button>
           </div>
         </div>
     {% endfor %}
     </div>
-    <div class="col-md-9 float-left">
-        <div class="w-100 h-100 p-3" style="background-color: #eee;">
 
+    <!-- Code -->
+    <div class="col-md-10 float-left">
+        <div class="w-100 h-100 p-3" style="background-color: #eee;">
+            <div id="content-area">
+
+            </div>
         </div>
+        <br>
+        <button type="button" class="btn btn-info"> Preview </button>
+        <button type="button" class="btn btn-success"> Save </button>
     </div>
+{% endblock %}
+
+
+{% block javascript %}
+    <script type="text/javascript">
+        $('.btn').click(function() {
+              {#var $doc = $.parseHTML($(this).data('doc'));#}
+              var $content = $("#content-area"),
+                  str = $(this).data('content'),
+                  html = $.parseHTML( str );
+
+            // Append the parsed HTML
+            $content.append( html );
+        });
+
+
+        function delete_btn() {
+
+        }
+    </script>
 {% endblock %}

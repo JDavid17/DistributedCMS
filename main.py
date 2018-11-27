@@ -5,10 +5,13 @@ from bs4 import BeautifulSoup
 from flask import Flask
 from flask import render_template
 from flask import request
+from chord import *
 
 import forms
 
 app = Flask(__name__)
+
+cwd = os.getcwd()
 
 
 @app.route("/")
@@ -19,8 +22,9 @@ def index():
 
 @app.route("/new_widget", methods=['GET', 'POST'])
 def new_widget():
+    os.chdir(cwd)
+    os.chdir("widgets")
     widget = forms.Widget(request.form)
-    os.chdir("/app/widgets")
     if request.method == 'POST' and widget.validate():
         folder = open("{}.txt".format(widget.name.data), "w")
         folder.write("{}".format(widget.html.data))
@@ -32,18 +36,26 @@ def new_widget():
 
 @app.route("/new_page")
 def new_page():
+    os.chdir(cwd)
     title = "New Page"
-    html_doc = """
+    html_head = """
     <html>
     <head></head>
     <body class="container">
-        
+    """
+    html_doc = """
+    <div id="content-area">
+    
+    </div>
+    """
+
+    html_end = """
     </body>
     </html>
     """
-    os.chdir("/app/widgets")
+    soup = BeautifulSoup(html_doc, 'html.parser').prettify()
     bs4_widgets = []
-
+    os.chdir("widgets")
     for file in glob.glob("*.txt"):
         temp = open("{}".format(file), "r")
         bs4_widgets.append({
@@ -51,8 +63,22 @@ def new_page():
             "html": "{}".format(BeautifulSoup(temp.read(), 'html.parser').prettify())
         })
         temp.close()
+    os.chdir(cwd)
+    os.chdir("templates")
+    page = open("new_page.html", "w")
+    page.close()
 
-    return render_template("page.html", title=title, widgets=bs4_widgets)
+    return render_template("page.html", title=title, widgets=bs4_widgets, html_doc=soup, html_head=html_head, html_end=html_end)
+
+@app.route("/pages")
+def pages():
+
+    pass
+
+@app.route("/widgets")
+def widgets():
+
+    pass
 
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-import Pyro4 
+import Pyro4
 import threading
 import hashlib
 import time
@@ -17,22 +17,23 @@ def repeat_wait(waitTime):
                     pass
                 time.sleep(waitTime)
             return
+
         return inner
+
     return decorator
 
 
 @Pyro4.expose
-class Chord():
+class Chord:
     def __init__(self, ip, port):
 
         self.next = -1
         self.finger = [None for i in range(M)]
-        #TODO: Implement a separate class for chord id
-        self._id = hashlib.sha1(str(ip + ":" + str(port)).encode('utf-8')).hexdigest()[:int(M/4)]
+        # TODO: Implement a separate class for chord id
+        self._id = hashlib.sha1(str(ip + ":" + str(port)).encode('utf-8')).hexdigest()[:int(M / 4)]
         self._successors = [""]
         self._predecessor = ""
         self._running = False
-
 
     @property
     def id(self):
@@ -61,7 +62,6 @@ class Chord():
     @property
     def running(self):
         return self._running
-
 
     def get(self, key):
         if betweenclosedopen(key, self.predecessor, self.id):
@@ -110,21 +110,21 @@ class Chord():
         currentNode = self.id
         while True:
             with remote(currentNode) as n:
-                if betweenclosedopen(key, n.id, n.successor()): 
+                if betweenclosedopen(key, n.id, n.successor()):
                     break
                 currentNode = n.closest_preceding_node(key)
         return currentNode
 
     def closest_preceding_node(self, key):
-        for i in range(len(self.finger)-1, 0, -1):
+        for i in range(len(self.finger) - 1, 0, -1):
             if self.finger[i] and betweenclosedclosed(self.finger[i], self.id, key):
                 return self.finger[i]
         return self.successor() if betweenclosedclosed(self.successor(), self.id, key) else self.id
 
     def notify(self, node):
-        if self.predecessor == None or betweenclosedclosed(node, self.predecessor, self.id) or not ping(self.predecessor):
+        if self.predecessor is None or betweenclosedclosed(node, self.predecessor, self.id) or not ping(
+                self.predecessor):
             self.predecessor = node
-
 
     @repeat_wait(STABILIZE_WAIT)
     def stabilize(self):
@@ -137,13 +137,13 @@ class Chord():
 
         with remote(suc) as successorNode:
             x = successorNode.predecessor
-            if self._successors[0] == successorNode.id and betweenclosedclosed(x, self.id, successorNode.id): 
+            if self._successors[0] == successorNode.id and betweenclosedclosed(x, self.id, successorNode.id):
                 newsuclist = [x]
             with remote(newsuclist[0]) as newSuccessor:
                 newSuccessor.notify(self.id)
 
         if self.id != self.successor():
-            newsuclist += remote(newsuclist[0]).successors[:N_SUCCESSORS-1]
+            newsuclist += remote(newsuclist[0]).successors[:N_SUCCESSORS - 1]
             self._successors = newsuclist
         log("successorlist: ", self.successors, "\n")
 
@@ -152,8 +152,7 @@ class Chord():
         self.next = self.next + 1
         if self.next >= M:
             self.next = 0
-        self.finger[self.next] = self.find_successor(intToKey(sumHexInt(self.id, 2**self.next) % 2**M, M))
-
+        self.finger[self.next] = self.find_successor(intToKey(sumHexInt(self.id, 2 ** self.next) % 2 ** M, M))
 
     def start(self):
         if not self.running:
@@ -169,21 +168,22 @@ class Chord():
 def log(*args):
     print(*args)
 
-def start_new_node(node, ip, port):    
+
+def start_new_node(node, ip, port):
     with Pyro4.Daemon(host=host, port=int(port)) as daemon:
         uri = daemon.register(node)
         Pyro4.locateNS().register(node.id, uri)
         print("daemon started for Node " + node.id)
         daemon.requestLoop()
 
-def log_node(node):
-    print("Node ID: {} Pred: {} Fingers: {} SucList: {}".format(node.id, node.predecessor, node.finger, node.successors))
 
+def log_node(node):
+    print(
+        "Node ID: {} Pred: {} Fingers: {} SucList: {}".format(node.id, node.predecessor, node.finger, node.successors))
 
 
 if __name__ == "__main__":
-    # host = input("IP: ")
-    host = "localhost"
+    host = input("IP: ")
     port = input("Port: ")
     node = Chord(host, port)
     node.join()
@@ -199,10 +199,9 @@ if __name__ == "__main__":
         l = cmd.split()
         if l[0] == "join":
             node.join(l[1])
-            print("Joining node %s:" % l[1]) 
+            print("Joining node %s:" % l[1])
 
-
-# # TESTS
+        # # TESTS
 # 10000 #2
 # 11028 #7
 # 11528 #8
