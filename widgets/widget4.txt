@@ -1,1 +1,0 @@
-<button typr="button" class="btn btn-primary small"> Button </button>

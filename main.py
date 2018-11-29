@@ -54,7 +54,7 @@ def new_page():
         # page = open("new_page.html", "w")
         # page.close()
         # data = {
-        # 
+        #
         # }
         # set_to_dht("PYRO:DHT_2@localhost:10000", data)
         pass
