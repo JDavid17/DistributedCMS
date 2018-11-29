@@ -1,18 +1,20 @@
 import glob
 import os
+import Pyro4
 
 from bs4 import BeautifulSoup
 from flask import Flask
 from flask import render_template
 from flask import request
 from chord import *
+from ckey import hash
+from api import set_to_dht, get_to_dht, get_all
 
 import forms
 
 app = Flask(__name__)
 
 cwd = os.getcwd()
-
 
 @app.route("/")
 def index():
@@ -22,6 +24,7 @@ def index():
 
 @app.route("/new_widget", methods=['GET', 'POST'])
 def new_widget():
+    # Local Storage
     os.chdir(cwd)
     os.chdir("widgets")
     widget = forms.Widget(request.form)
@@ -29,6 +32,8 @@ def new_widget():
         folder = open("{}.txt".format(widget.name.data), "w")
         folder.write("{}".format(widget.html.data))
         folder.close()
+
+    # DHT Storge
 
     title = "New Widget"
     return render_template("widget.html", title=title, form=widget)
@@ -54,30 +59,37 @@ def new_page():
     </html>
     """
     soup = BeautifulSoup(html_doc, 'html.parser').prettify()
-    bs4_widgets = []
+
+    # Search for local widgets
+    local_bs4_widgets = []
     os.chdir("widgets")
     for file in glob.glob("*.txt"):
         temp = open("{}".format(file), "r")
-        bs4_widgets.append({
+        local_bs4_widgets.append({
             "name": "{}".format(file.title().split(".")[0]),
             "html": "{}".format(BeautifulSoup(temp.read(), 'html.parser').prettify())
         })
         temp.close()
+
+    # Search for all widgets
+    # dht_bs4_widgets = []
+
     os.chdir(cwd)
     os.chdir("templates")
     page = open("new_page.html", "w")
     page.close()
 
-    return render_template("page.html", title=title, widgets=bs4_widgets, html_doc=soup, html_head=html_head, html_end=html_end)
+    return render_template("page.html", title=title, local_widgets=local_bs4_widgets, html_doc=soup,
+                           html_head=html_head, html_end=html_end)
+
 
 @app.route("/pages")
 def pages():
-
     pass
+
 
 @app.route("/widgets")
 def widgets():
-
     pass
 
 

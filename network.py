@@ -3,27 +3,30 @@ from ckey import *
 import time
 import Pyro4
 
+
 def ping(key, isDHT=False):
     try:
         if isDHT:
             with Pyro4.Proxy("PYRO:DHT_{}@{}:{}".format(key.id, key.ip, key.port)) as node:
-                node.database 
+                node.database
         else:
             with Pyro4.Proxy("PYRO:{}@{}:{}".format(key.id, key.ip, key.port)) as node:
-                node.id 
+                node.id
     except Pyro4.errors.CommunicationError:
         if not reconnected(node):
             return False
     return True
 
+
 def reconnected(proxy):
     # If cant create a proxy then it might be a temporary network error
-    try: 
-        proxy._pyroReconnect(CON_RETRIES) # Try to reconnect
+    try:
+        proxy._pyroReconnect(CON_RETRIES)  # Try to reconnect
     except Pyro4.errors.ConnectionClosedError:
         # If after 3 attemps the successor is still unreachable then node is disconnected
         return False
     return True
+
 
 def remote(key, isDHT=False):
     if isDHT:
@@ -44,6 +47,6 @@ def repeat_wait(waitTime):
                 except Pyro4.errors.CommunicationError:
                     pass
                 time.sleep(waitTime)
-            return
         return inner
+
     return decorator

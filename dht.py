@@ -35,8 +35,8 @@ class DHT:
 
             def run(node):
                 with Pyro4.Daemon(host=node.Node.key.ip, port=int(node.Node.key.port)) as daemon:
-                    daemon.register(node.Node, objectId=node.Node.id)
-                    daemon.register(node, objectId="DHT_" + node.Node.id)
+                    print(daemon.register(node.Node, objectId=node.Node.id))
+                    print(daemon.register(node, objectId="DHT_" + node.Node.id))
                     print("daemon started for Node {} on {}:{}".format(node.Node.id, node.Node.key.ip,
                                                                        node.Node.key.port))
                     daemon.requestLoop()
@@ -62,6 +62,11 @@ class DHT:
                 return succDHT.get(key)  # *****
 
     @Pyro4.expose
+    def get_all(self):
+        # Returns all data store in the DHT node
+        return self.data
+
+    @Pyro4.expose
     def set(self, key, val):
         # Data will eventually be forwarded to the correct DHT peer if its not the local one
         self.data[key] = val
@@ -85,7 +90,6 @@ class DHT:
 
 
 if __name__ == "__main__":
-
     host = "localhost"
     port = input()
 

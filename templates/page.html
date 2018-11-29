@@ -5,29 +5,31 @@
 {% endblock %}
 
 {% block content %}
-    <div class="col-md-2 float-left">
-    {% for widget in widgets %}
-        <div class="card" >
-          <div class="card-body">
-           <h5 class="card-title">{{ widget.name }}</h5>
-           <button type="button" class="btn btn-info" data-toggle="popover" title="Code" data-placement="left" data-content="{{ widget.html }}">Preview</button>
-           <button type="button" class="btn btn-primary small" id="selectable" data-content="{{ widget.html }}" data-doc="{{ html_doc }}">Select</button>
-           <button type="button" class="btn btn-danger small" onclick="delete_btn(this)">Delete</button>
-          </div>
+    <div class="row">
+        <div class="col-md-3 float-left">
+            {% for widget in local_widgets %}
+                <div class="card" >
+                  <div class="card-body">
+                   <h5 class="card-title">{{ widget.name }}</h5>
+                   <button type="button" class="btn btn-info" data-toggle="popover" title="Code" data-placement="left" data-content="{{ widget.html }}">Preview</button>
+                   <button type="button" class="btn btn-primary small" id="selectable" data-content="{{ widget.html }}" data-doc="{{ html_doc }}">Select</button>
+                   <button type="button" class="btn btn-danger small" onclick="delete_btn(this)">Delete</button>
+                  </div>
+                </div>
+            {% endfor %}
         </div>
-    {% endfor %}
-    </div>
 
-    <!-- Code -->
-    <div class="col-md-10 float-left">
-        <div class="w-100 h-100 p-3" style="background-color: #eee;">
-            <div id="content-area">
+        <!-- Code -->
+        <div class="col-md-9 float-left">
+            <div class="p-3" style="background-color: #eee;">
+                <div id="content-area">
 
+                </div>
             </div>
+            <br>
+            <button type="button" class="btn btn-info"> Preview </button>
+            <button type="button" class="btn btn-success"> Save </button>
         </div>
-        <br>
-        <button type="button" class="btn btn-info"> Preview </button>
-        <button type="button" class="btn btn-success"> Save </button>
     </div>
 {% endblock %}
 
