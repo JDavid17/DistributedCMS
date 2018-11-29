@@ -62,7 +62,7 @@ class DHT:
                 return succDHT.get(key)  # *****
 
     @Pyro4.expose
-    def get_all(self):
+    def get_all(self, type):
         # Returns all data store in the DHT node
         return_data = {}
 
@@ -70,7 +70,7 @@ class DHT:
             if ping(suc):
                 with remote(suc, isDHT=True) as succDHT:
                     for item in succDHT.database:
-                        if not return_data.__contains__(item):
+                        if not return_data.__contains__(item) and type == succDHT.database['type']:
                             return_data[item] = succDHT.database[item]
 
             else:

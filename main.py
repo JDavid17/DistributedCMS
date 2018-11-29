@@ -47,36 +47,38 @@ def new_widget():
 
 @app.route("/new_page", methods=['GET', 'POST'])
 def new_page():
-
+    page = forms.Page(request.form)
     if request.method == 'POST':
-        # os.chdir(cwd)
-        # os.chdir("templates")
-        # page = open("new_page.html", "w")
-        # page.close()
-        # data = {
-        #
-        # }
-        # set_to_dht("PYRO:DHT_2@localhost:10000", data)
+        html_head = """
+            <html>
+            <head></head>
+            <body class="container">
+            
+            <div id="content-area">
+            """
+        html_end = """
+            </div>
+            </body>
+            </html>
+            """
+        doc = html_head + page.code.data + html_end
+        soup = BeautifulSoup(doc, 'html.parser').prettify()
+        os.chdir(cwd)
+        os.chdir("templates")
+        folder = open("{}.html".format(page.title.data), "w")
+        folder.write("{}".format(soup))
+        folder.close()
+        data = {
+            "key": "{}".format(page.title.data),
+            "type": "webpage",
+            "data": "{}".format(soup)
+        }
+        set_to_dht("PYRO:DHT_2@localhost:10000", data)
         pass
 
     os.chdir(cwd)
     title = "New Page"
-    html_head = """
-    <html>
-    <head></head>
-    <body class="container">
-    """
-    html_doc = """
-    <div id="content-area">
-    
-    </div>
-    """
-
-    html_end = """
-    </body>
-    </html>
-    """
-    soup = BeautifulSoup(html_doc, 'html.parser').prettify()
+    # soup = BeautifulSoup(html_doc, 'html.parser').prettify()
 
     # Search for local widgets
     local_bs4_widgets = []
@@ -85,6 +87,7 @@ def new_page():
         temp = open("{}".format(file), "r")
         local_bs4_widgets.append({
             "key": "{}".format(file.title().split(".")[0]),
+            "type": "widget",
             "data": "{}".format(BeautifulSoup(temp.read(), 'html.parser').prettify())
         })
         temp.close()
@@ -92,8 +95,7 @@ def new_page():
     # Search for all widgets
     dht_bs4_widgets = get_all("PYRO:DHT_2@localhost:10000")
 
-    return render_template("page.html", title=title, widgets=dht_bs4_widgets, html_doc=soup,
-                           html_head=html_head, html_end=html_end)
+    return render_template("page.html", form=page,title=title, widgets=dht_bs4_widgets)
 
 
 @app.route("/pages")

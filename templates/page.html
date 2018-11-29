@@ -5,6 +5,9 @@
 {% endblock %}
 
 {% block content %}
+
+    {% from '_macro.html' import render_field %}
+
     <div class="row">
         <div class="col-md-3 float-left">
             {% for widget in widgets %}
@@ -20,16 +23,28 @@
         </div>
 
         <!-- Code -->
-        <div class="col-md-9 float-left">
-            <div class="p-3" style="background-color: #eee;">
-                <div id="content-area">
+        <form class="w-75">
+            <div class="form-group row">
+                <div class="col-md-9 float-left">
+                    <div>
+                        <label for="title">Nombre de la pagina</label>
+                        {{ render_field(form.title, class="form-control", id="title") }}
+                    </div>
+                    <hr>
+                    <div class="p-3" style="background-color: #eee;">
+                        <div id="content-area">
 
+                        </div>
+                        <div hidden>
+                            {{ render_field(form.code, class="form-control", id='code-area') }}
+                        </div>
+                    </div>
+                    <br>
+                    <button type="button" class="btn btn-info"> Preview </button>
+                    <button type="submit" formmethod="post" class="btn btn-success" id="save"> Save </button>
                 </div>
             </div>
-            <br>
-            <button type="button" class="btn btn-info"> Preview </button>
-            <button type="submit" formmethod="post" class="btn btn-success" id="save"> Save </button>
-        </div>
+        </form>
     </div>
 {% endblock %}
 
@@ -37,19 +52,14 @@
 {% block javascript %}
     <script type="text/javascript">
         $('.slec').click(function() {
-              {#var $doc = $.parseHTML($(this).data('doc'));#}
-              var $content = $("#content-area"),
-                  str = $(this).data('content'),
-                  html = $.parseHTML( str );
-
+            {#var $doc = $.parseHTML($(this).data('doc'));#}
+            let code = document.getElementById('code-area');
+            var str = $(this).data('content');
+            var $content = $('#content-area');
+            $content.append($.parseHTML(str));
             // Append the parsed HTML
-            $content.append( html );
+            code.value = $content.html();
         });
-
-        $('#save').click(function () {
-
-        });
-
 
         function delete_btn() {
 
