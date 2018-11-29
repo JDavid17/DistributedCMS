@@ -1,7 +1,0 @@
-<div>
-  <p>
-    <span>
-      Pepito
-    </span>
-  </p>
-</div>

@@ -1,5 +1,5 @@
 from settings import DISTRIBUTE_WAIT
-from network import remote, repeat_wait
+from network import remote, repeat_wait, ping
 from ckey import ChordKey, betweenclosedopen, hash
 from chord import ChordNode
 from log import *
@@ -64,7 +64,19 @@ class DHT:
     @Pyro4.expose
     def get_all(self):
         # Returns all data store in the DHT node
-        return self.data
+        return_data = {}
+
+        for suc in self.Node.successors:
+            if ping(suc):
+                with remote(suc, isDHT=True) as succDHT:
+                    for item in succDHT.database:
+                        if not return_data.__contains__(item):
+                            return_data[item] = succDHT.database[item]
+
+            else:
+                print("Lost Node {}".format(suc))
+
+        return return_data
 
     @Pyro4.expose
     def set(self, key, val):
@@ -110,5 +122,7 @@ if __name__ == "__main__":
             log(d.set(hash(l[1]), l[2]))
         if l[0] == "get":
             log(d.get(hash(l[1])))
+        if l[0] == "get_all":
+            log(d.get_all())
         if cmd == "":
             break

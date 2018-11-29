@@ -24,23 +24,41 @@ def index():
 
 @app.route("/new_widget", methods=['GET', 'POST'])
 def new_widget():
-    # Local Storage
+
     os.chdir(cwd)
     os.chdir("widgets")
     widget = forms.Widget(request.form)
     if request.method == 'POST' and widget.validate():
+        # Local Storage
         folder = open("{}.txt".format(widget.name.data), "w")
         folder.write("{}".format(widget.html.data))
         folder.close()
 
-    # DHT Storge
+        # DHT Storge
+        data = {
+            "key": "{}".format(widget.name.data),
+            "data": "{}".format(widget.html.data)
+        }
+        set_to_dht("PYRO:DHT_2@localhost:10000", data)
 
     title = "New Widget"
     return render_template("widget.html", title=title, form=widget)
 
 
-@app.route("/new_page")
+@app.route("/new_page", methods=['GET', 'POST'])
 def new_page():
+
+    if request.method == 'POST':
+        # os.chdir(cwd)
+        # os.chdir("templates")
+        # page = open("new_page.html", "w")
+        # page.close()
+        # data = {
+        # 
+        # }
+        # set_to_dht("PYRO:DHT_2@localhost:10000", data)
+        pass
+
     os.chdir(cwd)
     title = "New Page"
     html_head = """
@@ -66,20 +84,15 @@ def new_page():
     for file in glob.glob("*.txt"):
         temp = open("{}".format(file), "r")
         local_bs4_widgets.append({
-            "name": "{}".format(file.title().split(".")[0]),
-            "html": "{}".format(BeautifulSoup(temp.read(), 'html.parser').prettify())
+            "key": "{}".format(file.title().split(".")[0]),
+            "data": "{}".format(BeautifulSoup(temp.read(), 'html.parser').prettify())
         })
         temp.close()
 
     # Search for all widgets
-    # dht_bs4_widgets = []
+    dht_bs4_widgets = get_all("PYRO:DHT_2@localhost:10000")
 
-    os.chdir(cwd)
-    os.chdir("templates")
-    page = open("new_page.html", "w")
-    page.close()
-
-    return render_template("page.html", title=title, local_widgets=local_bs4_widgets, html_doc=soup,
+    return render_template("page.html", title=title, widgets=dht_bs4_widgets, html_doc=soup,
                            html_head=html_head, html_end=html_end)
 
 
