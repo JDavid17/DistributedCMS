@@ -20,6 +20,11 @@ class DHT:
     def database(self):
         return self.data
 
+    @property
+    @Pyro4.expose
+    def node(self):
+        return self.Node
+
     def start(self):
         if not self.isRunning:
             self.isRunning = True
@@ -62,7 +67,7 @@ class DHT:
                 return succDHT.get(key)  # *****
 
     @Pyro4.expose
-    def get_all(self, type):
+    def get_all(self, tipo):
         # Returns all data store in the DHT node
         return_data = {}
 
@@ -70,12 +75,13 @@ class DHT:
             if ping(suc):
                 with remote(suc, isDHT=True) as succDHT:
                     for item in succDHT.database:
-                        if not return_data.__contains__(item) and type == succDHT.database['type']:
+                        if not return_data.__contains__(succDHT.database[item]['key']) and succDHT.database[item]['type'] == tipo:
                             return_data[item] = succDHT.database[item]
 
             else:
                 print("Lost Node {}".format(suc))
 
+        print(return_data)
         return return_data
 
     @Pyro4.expose
@@ -123,6 +129,6 @@ if __name__ == "__main__":
         if l[0] == "get":
             log(d.get(hash(l[1])))
         if l[0] == "get_all":
-            log(d.get_all())
+            log(d.get_all(l[1]))
         if cmd == "":
             break

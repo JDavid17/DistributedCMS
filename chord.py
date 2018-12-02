@@ -19,10 +19,12 @@ class ChordNode:
         self._running = False
 
     @property
+    @Pyro4.expose
     def key(self):
         return self._key
 
     @property
+    @Pyro4.expose
     def id(self):
         return self._key.id
 

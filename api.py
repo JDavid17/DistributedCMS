@@ -3,11 +3,11 @@ from network import ping
 import Pyro4
 
 
-def set_to_dht(uri, data):
+def set_to_dht(uri, key, data):
     try:
         with Pyro4.Proxy(uri) as obj:
             print("Succesfuly connected to node, through URI: {}".format(uri))
-            obj.set(hash(data['key']), data['data'])
+            obj.set(hash(key), data)
     except Pyro4.errors.CommunicationError:
         print("Unable to Connect to node in URI: {}".format(uri))
 
@@ -18,11 +18,11 @@ def get_to_dht(key, uri):
     except Pyro4.errors.CommunicationError:
         print("Unable to Connect to node in URI: {}".format(uri))
 
-def get_all(uri):
+def get_all(uri, type):
     try:
         with Pyro4.Proxy(uri) as obj:
             print("Connected")
-            return obj.get_all()
+            return obj.get_all(type)
             # custom_successors(obj.node)
     except Pyro4.errors.CommunicationError:
         print("Unable to Connect to node in URI: {}".format(uri))

@@ -16,6 +16,7 @@ app = Flask(__name__)
 
 cwd = os.getcwd()
 
+
 @app.route("/")
 def index():
     title = "Index"
@@ -24,7 +25,6 @@ def index():
 
 @app.route("/new_widget", methods=['GET', 'POST'])
 def new_widget():
-
     os.chdir(cwd)
     os.chdir("widgets")
     widget = forms.Widget(request.form)
@@ -37,9 +37,10 @@ def new_widget():
         # DHT Storge
         data = {
             "key": "{}".format(widget.name.data),
+            "type": "widget",
             "data": "{}".format(widget.html.data)
         }
-        set_to_dht("PYRO:DHT_2@localhost:10000", data)
+        set_to_dht("PYRO:DHT_2@localhost:10000", widget.name.data, data)
 
     title = "New Widget"
     return render_template("widget.html", title=title, form=widget)
@@ -70,10 +71,10 @@ def new_page():
         folder.close()
         data = {
             "key": "{}".format(page.title.data),
-            "type": "webpage",
+            "type": "page",
             "data": "{}".format(soup)
         }
-        set_to_dht("PYRO:DHT_2@localhost:10000", data)
+        set_to_dht("PYRO:DHT_2@localhost:10000", page.title.data, data)
         pass
 
     os.chdir(cwd)
@@ -93,14 +94,13 @@ def new_page():
         temp.close()
 
     # Search for all widgets
-    dht_bs4_widgets = get_all("PYRO:DHT_2@localhost:10000")
-
-    return render_template("page.html", form=page,title=title, widgets=dht_bs4_widgets)
+    dht_bs4_widgets = get_all("PYRO:DHT_2@localhost:10000", 'widget')
+    return render_template("page.html", form=page, title=title, widgets=dht_bs4_widgets)
 
 
 @app.route("/pages")
 def pages():
-    pass
+    pages = get_all("PYRO:DHT_2@localhost:10000", 'page')
 
 
 @app.route("/widgets")
