@@ -65,10 +65,19 @@
               lineNumbers: true
             });
 
+            let head = String.raw `
+                <div contenteditable="true">
+            `;
+            let tail = String.raw `
+                </div>
+            `;
+
             let code = codeArea.getCode();
 
             codeArea.onUpdate((code) =>{
-                html.value = code.toString();
+                html.value = head;
+                html.value += code.toString();
+                html.value += tail;
                 console.log(html.value)
             });
         };

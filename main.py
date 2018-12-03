@@ -16,6 +16,9 @@ app = Flask(__name__)
 
 cwd = os.getcwd()
 
+str_page = 'page'
+str_widget = 'widget'
+
 
 @app.route("/")
 def index():
@@ -65,7 +68,7 @@ def new_page():
         doc = html_head + page.code.data + html_end
         soup = BeautifulSoup(doc, 'html.parser').prettify()
         os.chdir(cwd)
-        os.chdir("templates")
+        os.chdir("templates/pages")
         folder = open("{}.html".format(page.title.data), "w")
         folder.write("{}".format(soup))
         folder.close()
@@ -94,14 +97,45 @@ def new_page():
         temp.close()
 
     # Search for all widgets
-    dht_bs4_widgets = get_all("PYRO:DHT_2@localhost:10000", 'widget')
+    dht_bs4_widgets = get_all("PYRO:DHT_2@localhost:10000", str_widget)
     return render_template("page.html", form=page, title=title, widgets=dht_bs4_widgets)
 
 
 @app.route("/pages")
 def pages():
-    pages = get_all("PYRO:DHT_2@localhost:10000", 'page')
+    # Local Pages
+    title = "Pages"
+    os.chdir(cwd)
+    os.chdir("templates/pages")
+    print(os.getcwd())
+    local_bs4_pages = []
+    for file in glob.glob("*.html"):
+        temp = open("{}".format(file), "r+")
+        local_bs4_pages.append({
+            "key": "{}".format(file.title().split(".")[0]),
+            "type": "page",
+            "data": "{}".format(BeautifulSoup(temp.read(), "html.parser").prettify())
+        })
+        temp.close()
 
+    # DHT Pages
+    dht_pages = get_all("PYRO:DHT_2@localhost:10000", str_page)
+
+    pages = []
+    for item in local_bs4_pages:
+        pages.append(item)
+
+    for item in dht_pages:
+        if not pages.__contains__(dht_pages[item]):
+            pages.append(dht_pages[item])
+
+    print(pages)
+    return render_template("pages.html", title=title, pages=pages)
+
+@app.route("/edit_page")
+def edit_page():
+    request_page = request.args.get('key', 'Error encontrando la pagina')
+    return "El nombre de la pagina a buscar es: {}".format(request_page)
 
 @app.route("/widgets")
 def widgets():

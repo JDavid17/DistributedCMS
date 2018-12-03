@@ -13,9 +13,9 @@
             {% for widget in widgets %}
                 <div class="card" >
                   <div class="card-body">
-                   <h5 class="card-title">{{ widget }}</h5>
-                   <button type="button" class="btn btn-info" data-toggle="popover" title="Code" data-placement="left" data-content="{{ widgets[widget] }}">Preview</button>
-                   <button type="button" class="btn btn-primary small slec" id="selectable" data-content="{{ widgets[widget] }}" data-doc="{{ html_doc }}">Select</button>
+                   <h5 class="card-title">{{ widgets[widget]['key'] }}</h5>
+                   <button type="button" class="btn btn-info" data-toggle="popover" title="Code" data-placement="left" data-content="{{ widgets[widget]['data'] }}">Preview</button>
+                   <button type="button" class="btn btn-primary small slec" id="selectable" data-content="{{ widgets[widget]['data'] }}" data-doc="{{ html_doc }}">Select</button>
                    <button type="button" class="btn btn-danger small" onclick="delete_btn(this)">Delete</button>
                   </div>
                 </div>

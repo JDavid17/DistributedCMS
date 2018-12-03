@@ -1,0 +1,52 @@
+{% extends 'base/base.html' %}
+
+{% block title %}
+    {{ title }}
+{% endblock %}
+
+{% block  content %}
+
+    <div class="row">
+        <div class="col-md-3 float-left">
+            {% for page in pages %}
+                <div class="card" >
+                  <div class="card-body">
+                   <h5 class="card-title">{{ page['key'] }}</h5>
+{#                   <button type="button" class="btn btn-info" data-toggle="popover" title="Code" data-placement="left" data-content="{{ widgets[widget]['data'] }}">Preview</button>#}
+                   <a class="badge badge-primary slec" style="cursor: pointer" id="selectable" data-content="{{ page['data'] }}">Select</a>
+                   <a class="badge badge-danger" style="cursor: pointer" onclick="delete_btn(this)">Delete</a>
+                   <a href="edit_page?key={{ page['key'] }}" style="cursor: pointer" class="badge badge-warning"> Edit </a>
+                  </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="col-md-9 w-75">
+            <div class="p-3" id="content-area" style="background-color: #eee;">
+
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row">
+
+    </div>
+
+{% endblock %}
+
+{% block javascript %}
+    <script type="text/javascript">
+        $('.slec').click(function() {
+            {#var $doc = $.parseHTML($(this).data('doc'));#}
+            {#let code = document.getElementById('content-area');#}
+            var str = $(this).data('content');
+            var $content = $('#content-area');
+            $content.html($.parseHTML(str));
+        });
+
+        function delete_btn() {
+
+        }
+    </script>
+{% endblock %}

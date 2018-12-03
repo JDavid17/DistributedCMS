@@ -68,7 +68,7 @@ class DHT:
 
     @Pyro4.expose
     def get_all(self, tipo):
-        # Returns all data store in the DHT node
+        # Returns all data store in every DHT node
         return_data = {}
 
         for suc in self.Node.successors:
@@ -128,7 +128,9 @@ if __name__ == "__main__":
             log(d.set(hash(l[1]), l[2]))
         if l[0] == "get":
             log(d.get(hash(l[1])))
-        if l[0] == "get_all":
-            log(d.get_all(l[1]))
+        if l[0] == "get_all_page":
+            log(d.get_all('page'))
+        if l[0] == "get_all_widget":
+            log(d.get(hash('widget')))
         if cmd == "":
             break
