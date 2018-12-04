@@ -11,3 +11,5 @@ widgets
 templates/pages
 
 test.py
+
+*.pyc
