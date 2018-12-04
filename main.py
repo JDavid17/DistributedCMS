@@ -18,6 +18,18 @@ cwd = os.getcwd()
 
 str_page = 'page'
 str_widget = 'widget'
+html_head = """
+            <html>
+            <head></head>
+            <body class="container">
+
+            <div id="content-area">
+            """
+html_end = """
+            </div>
+            </body>
+            </html>
+            """
 
 
 @app.route("/")
@@ -53,18 +65,6 @@ def new_widget():
 def new_page():
     page = forms.Page(request.form)
     if request.method == 'POST':
-        html_head = """
-            <html>
-            <head></head>
-            <body class="container">
-            
-            <div id="content-area">
-            """
-        html_end = """
-            </div>
-            </body>
-            </html>
-            """
         doc = html_head + page.code.data + html_end
         soup = BeautifulSoup(doc, 'html.parser').prettify()
         os.chdir(cwd)
@@ -132,10 +132,19 @@ def pages():
     print(pages)
     return render_template("pages.html", title=title, pages=pages)
 
-@app.route("/edit_page")
+@app.route("/edit_page", methods=['GET', 'POST', 'PATCH', 'UPDATE'])
 def edit_page():
     request_page = request.args.get('key', 'Error encontrando la pagina')
-    return "El nombre de la pagina a buscar es: {}".format(request_page)
+    title = "Edit Page"
+    temp_page = forms.Page(request.form)
+    if request_page != 'Error encontrando la pagina':
+        if request.method == 'PATCH':
+            os.chdir(cwd)
+            os.chdir('templates')
+            file = open("edit_page.html", "r+")
+            pass
+
+    return render_template("edit_page.html", title=title)
 
 @app.route("/widgets")
 def widgets():
