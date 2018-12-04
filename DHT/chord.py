@@ -137,6 +137,8 @@ class ChordNode:
 
     def start(self):
         if not self.running:
+            self._running = True
+            
             t = threading.Thread(target=self.fix_fingers)
             t.daemon = True
             t.start()
@@ -144,6 +146,7 @@ class ChordNode:
             t = threading.Thread(target=self.stabilize)
             t.daemon = True
             t.start()
+
 
     def shutdown(self):
         pass
