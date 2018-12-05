@@ -13,3 +13,5 @@ templates/pages
 test.py
 
 *.pyc
+
+*/__pycache__
