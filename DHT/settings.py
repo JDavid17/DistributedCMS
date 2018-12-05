@@ -12,3 +12,7 @@ FFINGERS_WAIT = .5      # Time to wait between each fix fingers call (seconds)
 
 
 DISTRIBUTE_WAIT = 1     # Time to wait between each data distribution routine (seconds)
+
+REPLICATE_WAIT = 1      # Time to wait between each data replication routine (seconds)
+
+CHECK_REP_WAIT = 1        # Time to wait to check replicated data (seconds)

@@ -1,6 +1,8 @@
 import glob
 import os
 import Pyro4
+import json
+import urllib3
 
 from bs4 import BeautifulSoup
 from flask import Flask
@@ -18,6 +20,20 @@ cwd = os.getcwd()
 
 str_page = 'page'
 str_widget = 'widget'
+html_head = """
+            <html>
+            <head></head>
+            <body class="container">
+
+            <div id="content-area" contenteditable="true">
+            """
+html_end = """
+            </div>
+            </body>
+            </html>
+            """
+
+http = urllib3.PoolManager()
 
 
 @app.route("/")
@@ -53,18 +69,6 @@ def new_widget():
 def new_page():
     page = forms.Page(request.form)
     if request.method == 'POST':
-        html_head = """
-            <html>
-            <head></head>
-            <body class="container">
-            
-            <div id="content-area">
-            """
-        html_end = """
-            </div>
-            </body>
-            </html>
-            """
         doc = html_head + page.code.data + html_end
         soup = BeautifulSoup(doc, 'html.parser').prettify()
         os.chdir(cwd)
@@ -103,43 +107,84 @@ def new_page():
 
 @app.route("/pages")
 def pages():
-    # Local Pages
     title = "Pages"
-    os.chdir(cwd)
-    os.chdir("templates/pages")
-    print(os.getcwd())
-    local_bs4_pages = []
-    for file in glob.glob("*.html"):
-        temp = open("{}".format(file), "r+")
-        local_bs4_pages.append({
-            "key": "{}".format(file.title().split(".")[0]),
-            "type": "page",
-            "data": "{}".format(BeautifulSoup(temp.read(), "html.parser").prettify())
-        })
-        temp.close()
+    r = http.request('GET', 'http://localhost:5000/pages.json')
+    # print("status " + str(r.status))
+    # print("data " + str(r.data))
+    content = json.loads(r.data.decode('utf-8'))
 
-    # DHT Pages
-    dht_pages = get_all("PYRO:DHT_2@localhost:10000", str_page)
+    return render_template("pages.html", pages=content, title=title)
 
-    pages = []
-    for item in local_bs4_pages:
-        pages.append(item)
 
-    for item in dht_pages:
-        if not pages.__contains__(dht_pages[item]):
-            pages.append(dht_pages[item])
+# @app.route("/widgets", methods=['GET', 'POST'])
+# def widgets():
+#     title = "Widgets"
+#     r = http.request('GET', 'http://localhost:5000/widgets.json')
+#     print("status " + str(r.status))
+#     print("data " + str(r.data))
+#     content = json.loads(r.data.decode('utf-8'))
+#
+#     return render_template("widget.html", title=title, widgets=content)
 
-    print(pages)
-    return render_template("pages.html", title=title, pages=pages)
 
-@app.route("/edit_page")
-def edit_page():
-    request_page = request.args.get('key', 'Error encontrando la pagina')
-    return "El nombre de la pagina a buscar es: {}".format(request_page)
+####################### API Stuff ####################################
 
-@app.route("/widgets")
-def widgets():
-    pass
+@app.route("/pages.json", methods=['GET', 'POST'])
+def pages_json():
+    tipo = 'page'
+    uri = "PYRO:DHT_2@localhost:10000"
+
+    if request.method == 'POST':
+        # print("checking json: " + str(request.is_json))
+        resp = request.get_json()
+        print(resp)
+        id = resp['id']
+        key = resp['key']
+        data = resp['data']
+        type = resp['type']
+        with Pyro4.Proxy(uri) as obj:
+            pretty_data = BeautifulSoup(data, "html.parser").prettify()
+            data = {
+                'key': key,
+                'type': type,
+                'data': pretty_data
+            }
+            set_to_dht("PYRO:DHT_2@localhost:10000", key, data)
+
+        return json.dumps({'status': 'OK', 'key': key, 'type': type, 'data': data})
+    else:
+        try:
+            with Pyro4.Proxy(uri) as obj:
+                pages = obj.get_all(tipo)
+                response = app.response_class(
+                    response=json.dumps(pages),
+                    status=200,
+                    mimetype='application/json'
+                )
+        except Pyro4.errors.CommunicationError:
+            print("Unable to Connect to node in URI: {}".format(uri))
+    return response
+
+
+@app.route("/widgets.json", methods=['GET', 'POST'])
+def widgets_json():
+    tipo = 'widget'
+    uri = "PYRO:DHT_2@localhost:10000"
+    try:
+        with Pyro4.Proxy(uri) as obj:
+            widgets = obj.get_all(tipo)
+            response = app.response_class(
+                response=json.dumps(widgets),
+                status=200,
+                mimetype='application/json'
+            )
+    except Pyro4.errors.CommunicationError:
+        print("Unable to Connect to node in URI: {}".format(uri))
+
+    return response
+
+
+####################### API Stuff ####################################
 
 
 if __name__ == '__main__':

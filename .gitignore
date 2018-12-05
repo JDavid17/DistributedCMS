@@ -6,6 +6,8 @@
 # User-specific stuff
 .idea/*
 
+*/__pycache__
+
 widgets
 
 templates/pages

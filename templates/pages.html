@@ -8,23 +8,36 @@
 
     <div class="row">
         <div class="col-md-3 float-left">
-            {% for page in pages %}
+            {% for key in pages %}3
                 <div class="card" >
                   <div class="card-body">
-                   <h5 class="card-title">{{ page['key'] }}</h5>
+                   <h5 class="card-title">{{ pages[key]['key'] }}</h5>
 {#                   <button type="button" class="btn btn-info" data-toggle="popover" title="Code" data-placement="left" data-content="{{ widgets[widget]['data'] }}">Preview</button>#}
-                   <a class="badge badge-primary slec" style="cursor: pointer" id="selectable" data-content="{{ page['data'] }}">Select</a>
+                   <a class="badge badge-warning slec" style="cursor: pointer" id="selectable" data-content="{{ pages[key]['data'] }}" data-placement="{{ key }}" data-type="{{ pages[key]['type'] }}" data-key="{{ pages[key]['key'] }}">Edit</a>
                    <a class="badge badge-danger" style="cursor: pointer" onclick="delete_btn(this)">Delete</a>
-                   <a href="edit_page?key={{ page['key'] }}" style="cursor: pointer" class="badge badge-warning"> Edit </a>
+{#                   <a href="edit_page?key={{ page['key'] }}" style="cursor: pointer" class="badge badge-warning"> Edit </a>#}
                   </div>
                 </div>
             {% endfor %}
         </div>
 
         <div class="col-md-9 w-75">
-            <div class="p-3" id="content-area" style="background-color: #eee;">
+            <div class="p-3" id="content-area" onclick="add_id(event)" style="background-color: #eee;">
 
             </div>
+
+            <br>
+            <div class="row">
+                <button type="button" style="visibility: hidden"  class="btn btn-success" id="save_edit"> Save Edit </button>
+            </div>
+
+            <br>
+            <div class="row">
+                <button type="button" style="visibility: hidden" class="btn btn-primary" id="move_up">Move Up</button>
+                <button type="button" style="visibility: hidden" class="btn btn-secondary" id="move_down">Move Down</button>
+                <button type="button" style="visibility: hidden" class="btn btn-warning" id="move_rotate">Rotate</button>
+            </div>
+
         </div>
 
     </div>
@@ -37,16 +50,100 @@
 
 {% block javascript %}
     <script type="text/javascript">
+        function add_id(e){
+            var text = $(e.target);
+            text.attr('id', 'moveable');
+            console.log(text);
+            var up = $('#move_up');
+            var down = $('#move_down');
+            var rotate = $('#move_rotate');
+            up.css("visibility", "visible");
+            down.css("visibility", "visible");
+            rotate.css("visibility", "visible")
+        }
+
+        $('#move_down').on('click', function () {
+            move('#moveable')
+                .translate(0, 100)
+                .end();
+            var moveable = $('#moveable');
+            moveable.removeAttr("id")
+        });
+
+        $('#move_up').on('click', function () {
+            move('#moveable')
+                .translate(0, -50)
+                .end()
+            var moveable = $('#moveable');
+            moveable.removeAttr("id")
+        });
+
         $('.slec').click(function() {
             {#var $doc = $.parseHTML($(this).data('doc'));#}
             {#let code = document.getElementById('content-area');#}
             var str = $(this).data('content');
             var $content = $('#content-area');
             $content.html($.parseHTML(str));
+            var save = $('#save_edit');
+            if (save.css("visibility") === "hidden"){
+                save.css("visibility", "visible")
+            }
         });
 
         function delete_btn() {
 
         }
+        $('#content-area').focusin(function (event) {
+            event.preventDefault();
+
+            //make div editable
+            {#$(this).closest('h1').attr('contenteditable', 'true');#}
+            //add bg css
+            $(this).addClass('bg-warning').css('padding','5px');
+
+
+        });
+        $('#content-area').focusout(function (event) {
+
+            event.preventDefault();
+
+            var key = $('.slec').data('placement');
+
+            {#console.log(key);#}
+
+            {#$(this).closest('tr').attr('row_id');#}
+
+            $(this)
+            .removeClass('bg-warning') //add bg css
+            .css('padding','');
+
+            {#console.log($(this).html());#}
+
+            {#var new_html = $(this).html();#}
+        });
+
+        $("#save_edit").on('click', function () {
+            var data = {};
+
+            data['id'] = $(".slec").data('placement');
+            data['key'] = $('.slec').data('key')
+            data['type'] = $(".slec").data('type');
+            data['data'] = $("#content-area").html();
+
+
+            $.ajax({
+                url: "/pages.json",
+                type: 'POST',
+                dataType: "json",
+                contentType: 'application/json;charset=UTF-8',
+                data: JSON.stringify(data),
+                error: function() {
+                  console.log('POST Error');
+                },
+                success: function (response) {
+                    console.log(response)
+                }
+            })
+        });
     </script>
 {% endblock %}

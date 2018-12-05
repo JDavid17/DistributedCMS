@@ -1,4 +1,4 @@
-from settings import DISTRIBUTE_WAIT
+from settings import DISTRIBUTE_WAIT, REPLICATE_WAIT, CHECK_REP_WAIT
 from network import remote, repeat_wait, ping
 from ckey import ChordKey, betweenclosedopen, hash
 from chord import ChordNode
@@ -13,6 +13,7 @@ class DHT:
         self.Node = ChordNode(ip, port)
         self.Node.join(remoteIp, remotePort)
         self.data = {}
+        self.rep_data = {}
         self.isRunning = False
 
     @property
@@ -22,8 +23,8 @@ class DHT:
 
     @property
     @Pyro4.expose
-    def node(self):
-        return self.Node
+    def replicas(self):
+        return self.rep_data
 
     def start(self):
         if not self.isRunning:
@@ -31,10 +32,17 @@ class DHT:
 
             def converter(classname, dict):
                 return ChordKey(dict['ip'], dict['port'])
-
             Pyro4.util.SerializerBase.register_dict_to_class("ckey.ChordKey", converter)
 
             t = threading.Thread(target=self.distribute_data)
+            t.daemon = True
+            t.start()
+
+            t = threading.Thread(target=self.replicate_data)
+            t.daemon = True
+            t.start()
+
+            t = threading.Thread(target=self.check_replicas)
             t.daemon = True
             t.start()
 
@@ -70,26 +78,41 @@ class DHT:
         # Returns all data store in every DHT node
         return_data = {}
 
-        for suc in self.Node.successors:
+        for suc in self.Node.successors:        # NEED FIX
             if ping(suc):
                 with remote(suc, isDHT=True) as succDHT:
                     for item in succDHT.database:
                         if not return_data.__contains__(succDHT.database[item]['key']) and succDHT.database[item]['type'] == tipo:
                             return_data[item] = succDHT.database[item]
-
             else:
-                print("Lost Node {}".format(suc))
+                log("Lost Node {}".format(suc))
 
         print(return_data)
         return return_data
 
     @Pyro4.expose
     def set(self, key, val):
-        # Data will eventually be forwarded to the correct DHT peer if its not the local one
-        self.data[key] = val
+        # Check if its a write on a replica
+        with remote(self.Node.predecessor, isDHT=False) as pred:
+            if betweenclosedopen(key, pred.predecessor.id, self.Node.predecessor.id):
+                self.rep_data[key] = val
+                with remote(self.Node.predecessor, isDHT=True) as pred:
+                    pred.set(key, val)              
+            else:
+                # Data will eventually be forwarded to the correct DHT peer if its not the local one
+                self.data[key] = val
+
+    @Pyro4.expose
+    def take_replica(self, key, value):
+        self.rep_data[key] = value
+
 
     @repeat_wait(DISTRIBUTE_WAIT)
     def distribute_data(self):
+        if not self.Node.running or self.Node.id == self.Node.successor(): 
+            # No need to migrate data if the system has 1 Node or hasn't started
+            return
+
         to_remove = []
         keys = self.data.keys()
         for key in keys:
@@ -104,6 +127,43 @@ class DHT:
         # Remove migrated data
         for key in to_remove:
             del self.data[key]
+
+    @repeat_wait(REPLICATE_WAIT)
+    def replicate_data(self):
+        if not self.Node.running or self.Node.id == self.Node.successor():    
+            # Do not replicate if the system has 1 Node or hasn't started
+            return
+
+        to_replicate = self.data
+        for key in to_replicate.keys():
+            if betweenclosedopen(key, self.Node.predecessor.id, self.Node.id):
+                with remote(self.Node.successor(), isDHT=True) as succ:    # Push replicas to multiple successors ? 2 replicas enough ?
+                    succ.take_replica(key, to_replicate[key])
+
+    @repeat_wait(CHECK_REP_WAIT)
+    def check_replicas(self):
+        if not self.Node.running:
+            return
+        
+        replicated_data = self.rep_data
+        to_remove = []
+        for key in replicated_data.keys():
+            # Check if we must take over this replica in case the owner left the system
+            if betweenclosedopen(key, self.Node.predecessor.id, self.Node.id):
+                # We are now responsible for this data
+                self.data[key] = replicated_data[key]
+                to_remove.append(key)
+            
+            # Check if we can clean up this replica
+            with remote(self.Node.predecessor, isDHT=False) as pred:
+                if not betweenclosedopen(key, pred.predecessor.id, self.Node.predecessor.id):
+                    # We no longer have to keep this replica
+                    if not to_remove.__contains__(key):
+                        to_remove.append(key)
+
+        for key in to_remove:
+            del self.rep_data[key]
+
 
 
 if __name__ == "__main__":

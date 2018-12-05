@@ -1,5 +1,5 @@
-from settings import *
-from ckey import *
+from DHT.settings import *
+from DHT.ckey import *
 import time
 import Pyro4
 
