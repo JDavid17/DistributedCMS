@@ -32,6 +32,7 @@ class DHT:
 
             def converter(classname, dict):
                 return ChordKey(dict['ip'], dict['port'])
+
             Pyro4.util.SerializerBase.register_dict_to_class("ckey.ChordKey", converter)
 
             t = threading.Thread(target=self.distribute_data)
@@ -50,7 +51,8 @@ class DHT:
                 with Pyro4.Daemon(host=node.Node.key.ip, port=int(node.Node.key.port)) as daemon:
                     print(daemon.register(node.Node, objectId=node.Node.id))
                     print(daemon.register(node, objectId="DHT_" + node.Node.id))
-                    print("daemon started for Node {} on {}:{}".format(node.Node.id, node.Node.key.ip, node.Node.key.port))
+                    print("daemon started for Node {} on {}:{}".format(node.Node.id, node.Node.key.ip,
+                                                                       node.Node.key.port))
                     daemon.requestLoop()
 
             t = threading.Thread(target=run, args=(self,))
@@ -69,16 +71,16 @@ class DHT:
             if betweenclosedopen(key, self.Node.predecessor.id, self.Node.id):
                 # We dont have the data yet
                 return None
-            succ = self.Node.find_successor(key)        # *****
-            with remote(succ, isDHT=True) as succDHT:   # *****
-                return succDHT.get(key)                 # *****
+            succ = self.Node.find_successor(key)  # *****
+            with remote(succ, isDHT=True) as succDHT:  # *****
+                return succDHT.get(key)  # *****
 
     @Pyro4.expose
     def get_all(self, tipo):
         # Returns all data store in every DHT node
         return_data = {}
 
-        for suc in self.Node.successors:        # NEED FIX
+        for suc in self.Node.successors:  # NEED FIX
             if ping(suc):
                 with remote(suc, isDHT=True) as succDHT:
                     for item in succDHT.database:
@@ -97,7 +99,7 @@ class DHT:
             if betweenclosedopen(key, pred.predecessor.id, self.Node.predecessor.id):
                 self.rep_data[key] = val
                 with remote(self.Node.predecessor, isDHT=True) as pred:
-                    pred.set(key, val)              
+                    pred.set(key, val)
             else:
                 # Data will eventually be forwarded to the correct DHT peer if its not the local one
                 self.data[key] = val
@@ -106,10 +108,9 @@ class DHT:
     def take_replica(self, key, value):
         self.rep_data[key] = value
 
-
     @repeat_wait(DISTRIBUTE_WAIT)
     def distribute_data(self):
-        if not self.Node.running or self.Node.id == self.Node.successor(): 
+        if not self.Node.running or self.Node.id == self.Node.successor():
             # No need to migrate data if the system has 1 Node or hasn't started
             return
 
@@ -117,9 +118,9 @@ class DHT:
         keys = self.data.keys()
         for key in keys:
             if not betweenclosedopen(key, self.Node.predecessor.id, self.Node.id):
-                succ = self.Node.find_successor(key)        # ***** Needs error handling ???
-                with remote(succ, isDHT=True) as succDHT:   # *****
-                    succDHT.set(key, self.data[key])        # *****
+                succ = self.Node.find_successor(key)  # ***** Needs error handling ???
+                with remote(succ, isDHT=True) as succDHT:  # *****
+                    succDHT.set(key, self.data[key])  # *****
 
                 to_remove.append(key)
                 log("migrated key {} to node {}".format(key, succ.id))
@@ -130,21 +131,22 @@ class DHT:
 
     @repeat_wait(REPLICATE_WAIT)
     def replicate_data(self):
-        if not self.Node.running or self.Node.id == self.Node.successor():    
+        if not self.Node.running or self.Node.id == self.Node.successor():
             # Do not replicate if the system has 1 Node or hasn't started
             return
 
         to_replicate = self.data
         for key in to_replicate.keys():
             if betweenclosedopen(key, self.Node.predecessor.id, self.Node.id):
-                with remote(self.Node.successor(), isDHT=True) as succ:    # Push replicas to multiple successors ? 2 replicas enough ?
+                with remote(self.Node.successor(),
+                            isDHT=True) as succ:  # Push replicas to multiple successors ? 2 replicas enough ?
                     succ.take_replica(key, to_replicate[key])
 
     @repeat_wait(CHECK_REP_WAIT)
     def check_replicas(self):
         if not self.Node.running:
             return
-        
+
         replicated_data = self.rep_data
         to_remove = []
         for key in replicated_data.keys():
@@ -153,7 +155,7 @@ class DHT:
                 # We are now responsible for this data
                 self.data[key] = replicated_data[key]
                 to_remove.append(key)
-            
+
             # Check if we can clean up this replica
             with remote(self.Node.predecessor, isDHT=False) as pred:
                 if not betweenclosedopen(key, pred.predecessor.id, self.Node.predecessor.id):
@@ -163,7 +165,6 @@ class DHT:
 
         for key in to_remove:
             del self.rep_data[key]
-
 
 
 if __name__ == "__main__":
@@ -191,5 +192,7 @@ if __name__ == "__main__":
             log(d.get_all('page'))
         if l[0] == "get_all_widget":
             log(d.get(hash('widget')))
+        if l[0] == "get_history":
+            log(d.Node.history)
         if cmd == "":
             break

@@ -1,8 +1,7 @@
-from DHT.settings import *
-from DHT.ckey import *
+from settings import *
+from ckey import *
 import time
 import Pyro4
-
 
 def ping(key, isDHT=False):
     try:

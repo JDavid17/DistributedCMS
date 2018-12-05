@@ -1,7 +1,7 @@
-from DHT.ckey import *
-from DHT.settings import *
-from DHT.network import *
-from DHT.log import *
+from ckey import *
+from settings import *
+from network import *
+from log import *
 import Pyro4
 import threading
 
@@ -12,7 +12,8 @@ class ChordNode:
 
         self.next = -1
         self.finger = [None for i in range(M)]
-        # TODO: Implement a separate class for chord id
+        # TODO: Implement a separate class for chord id'
+        self._history = []
         self._key = ChordKey(ip, port)
         self._successors = [None]
         self._predecessor = None
@@ -21,6 +22,10 @@ class ChordNode:
     @property
     def key(self):
         return self._key
+
+    @property
+    def history(self):
+        return self._history
 
     @property
     def id(self):
@@ -61,6 +66,7 @@ class ChordNode:
                         gatewayNode.predecessor = self.key
 
                         gatewayNode.start()
+
                     else:
                         self._successors[0] = gatewayNode.find_successor(self.id)
                 log("Joining Chord through node %s:" % gwnodeKey.id)
@@ -73,6 +79,8 @@ class ChordNode:
             if ping(suc):
                 return suc
             else:
+                if not self.history.__contains__(suc):
+                    self.history.append(suc)
                 log("Node {} is gone".format(suc))
         log("No successor was found for Node " + self.id)
 
@@ -98,7 +106,7 @@ class ChordNode:
         return self.successor() if betweenclosedclosed(self.successor().id, self.id, key) else self.key
 
     def notify(self, predKey):
-        if self.predecessor == None or betweenclosedclosed(predKey.id, self.predecessor.id, self.id) or not ping(
+        if self.predecessor is None or betweenclosedclosed(predKey.id, self.predecessor.id, self.id) or not ping(
                 self.predecessor):
             self.predecessor = predKey
 
@@ -124,6 +132,14 @@ class ChordNode:
             self._successors = newsuclist
         # log("successorlist: ", self.successors, "\n")
 
+    @repeat_wait(STABILIZE_WAIT)
+    def merge_ring(self):
+        for node in self.history:
+            if ping(node):
+                print("Posibly Can Merge")
+            else:
+                print("Node {} is still dead".format(str(node)))
+
     @repeat_wait(FFINGERS_WAIT)
     def fix_fingers(self):
         self.next = self.next + 1
@@ -140,6 +156,10 @@ class ChordNode:
             t.start()
 
             t = threading.Thread(target=self.stabilize)
+            t.daemon = True
+            t.start()
+
+            t = threading.Thread(target=self.merge_ring)
             t.daemon = True
             t.start()
 
@@ -179,6 +199,8 @@ if __name__ == "__main__":
         l = cmd.split()
         if l[0] == "join":
             node.join("localhost", l[1])
+        if l[0] == "get_history":
+            print(node.hisotry)
 
 # # TESTS
 # 10000 #2

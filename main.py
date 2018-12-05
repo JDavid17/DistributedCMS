@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from flask import Flask
 from flask import render_template
 from flask import request
-from DHT.chord import *
+# from DHT.chord import ChordNode
 from DHT.ckey import hash
 from api import set_to_dht, get_to_dht, get_all
 
