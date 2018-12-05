@@ -21,7 +21,7 @@ def get_to_dht(key, uri):
 def get_all(uri, type):
     try:
         with Pyro4.Proxy(uri) as obj:
-            print("Connected")
+            # print("Connected")
             return obj.get_all(type)
             # custom_successors(obj.node)
     except Pyro4.errors.CommunicationError:
