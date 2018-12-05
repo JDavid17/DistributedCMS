@@ -98,7 +98,7 @@ class ChordNode:
         return self.successor() if betweenclosedclosed(self.successor().id, self.id, key) else self.key
 
     def notify(self, predKey):
-        if self.predecessor == None or betweenclosedclosed(predKey.id, self.predecessor.id, self.id) or not ping(
+        if self.predecessor is None or betweenclosedclosed(predKey.id, self.predecessor.id, self.id) or not ping(
                 self.predecessor):
             self.predecessor = predKey
 
