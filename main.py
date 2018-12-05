@@ -129,7 +129,7 @@ def pages():
 
 ####################### API Stuff ####################################
 
-@app.route("/pages.json", methods=['GET', 'POST', 'PATCH'])
+@app.route("/pages.json", methods=['GET', 'POST'])
 def pages_json():
     tipo = 'page'
     uri = "PYRO:DHT_2@localhost:10000"
