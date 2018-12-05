@@ -42,8 +42,7 @@ class DHT:
                 with Pyro4.Daemon(host=node.Node.key.ip, port=int(node.Node.key.port)) as daemon:
                     print(daemon.register(node.Node, objectId=node.Node.id))
                     print(daemon.register(node, objectId="DHT_" + node.Node.id))
-                    print("daemon started for Node {} on {}:{}".format(node.Node.id, node.Node.key.ip,
-                                                                       node.Node.key.port))
+                    print("daemon started for Node {} on {}:{}".format(node.Node.id, node.Node.key.ip, node.Node.key.port))
                     daemon.requestLoop()
 
             t = threading.Thread(target=run, args=(self,))
@@ -62,9 +61,9 @@ class DHT:
             if betweenclosedopen(key, self.Node.predecessor.id, self.Node.id):
                 # We dont have the data yet
                 return None
-            succ = self.Node.find_successor(key)  # *****
-            with remote(succ, isDHT=True) as succDHT:  # *****
-                return succDHT.get(key)  # *****
+            succ = self.Node.find_successor(key)        # *****
+            with remote(succ, isDHT=True) as succDHT:   # *****
+                return succDHT.get(key)                 # *****
 
     @Pyro4.expose
     def get_all(self, tipo):
@@ -95,9 +94,9 @@ class DHT:
         keys = self.data.keys()
         for key in keys:
             if not betweenclosedopen(key, self.Node.predecessor.id, self.Node.id):
-                succ = self.Node.find_successor(key)  # ***** Needs error handling ???
-                with remote(succ, isDHT=True) as succDHT:  # *****
-                    succDHT.set(key, self.data[key])  # *****
+                succ = self.Node.find_successor(key)        # ***** Needs error handling ???
+                with remote(succ, isDHT=True) as succDHT:   # *****
+                    succDHT.set(key, self.data[key])        # *****
 
                 to_remove.append(key)
                 log("migrated key {} to node {}".format(key, succ.id))
