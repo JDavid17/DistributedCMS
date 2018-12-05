@@ -6,6 +6,10 @@ from log import *
 import Pyro4
 import threading
 import hashlib
+import json
+import os
+import shutil
+
 
 
 class DHT:
@@ -64,7 +68,9 @@ class DHT:
     @Pyro4.expose
     def get(self, key):
         try:
-            return self.data[key]
+            with open("/data/" + self.data[key],'r') as file:
+                data = file.read()
+                return json.loads(data)
         except Exception:
             if betweenclosedopen(key, self.Node.predecessor.id, self.Node.id):
                 # We dont have the data yet
@@ -95,16 +101,20 @@ class DHT:
         # Check if its a write on a replica
         with remote(self.Node.predecessor, isDHT=False) as pred:
             if betweenclosedopen(key, pred.predecessor.id, self.Node.predecessor.id):
-                self.rep_data[key] = val
+                self.rep_data[key] = val                                                ### FIXX
                 with remote(self.Node.predecessor, isDHT=True) as pred:
                     pred.set(key, val)              
             else:
                 # Data will eventually be forwarded to the correct DHT peer if its not the local one
-                self.data[key] = val
+                self.data[key] = "/data/" + key
+                with open(self.data[key], 'w') as file:
+                    file.write(json.dumps(val))
 
     @Pyro4.expose
     def take_replica(self, key, value):
-        self.rep_data[key] = value
+        self.rep_data[key] = "/rep/" + key
+        with open(self.rep_data[key], 'w') as file:
+            file.write(json.dumps(value))
 
 
     @repeat_wait(DISTRIBUTE_WAIT)
@@ -117,15 +127,17 @@ class DHT:
         keys = self.data.keys()
         for key in keys:
             if not betweenclosedopen(key, self.Node.predecessor.id, self.Node.id):
-                succ = self.Node.find_successor(key)        # ***** Needs error handling ???
-                with remote(succ, isDHT=True) as succDHT:   # *****
-                    succDHT.set(key, self.data[key])        # *****
-
-                to_remove.append(key)
-                log("migrated key {} to node {}".format(key, succ.id))
+                succ = self.Node.find_successor(key)
+                with remote(succ, isDHT=True) as succDHT:
+                    with open(self.data[key], 'r') as file:
+                        x = file.read()
+                        succDHT.set(key, json.loads(x))
+                        to_remove.append(key)
+                        log("migrated key {} to node {}".format(key, succ.id))
 
         # Remove migrated data
         for key in to_remove:
+            os.remove(self.data[key])
             del self.data[key]
 
     @repeat_wait(REPLICATE_WAIT)
@@ -138,7 +150,9 @@ class DHT:
         for key in to_replicate.keys():
             if betweenclosedopen(key, self.Node.predecessor.id, self.Node.id):
                 with remote(self.Node.successor(), isDHT=True) as succ:    # Push replicas to multiple successors ? 2 replicas enough ?
-                    succ.take_replica(key, to_replicate[key])
+                    with open(to_replicate[key], 'r') as file:
+                        x = file.read()
+                        succ.take_replica(key, json.dumps(x))
 
     @repeat_wait(CHECK_REP_WAIT)
     def check_replicas(self):
@@ -151,7 +165,8 @@ class DHT:
             # Check if we must take over this replica in case the owner left the system
             if betweenclosedopen(key, self.Node.predecessor.id, self.Node.id):
                 # We are now responsible for this data
-                self.data[key] = replicated_data[key]
+                self.data[key] = "/data/" + replicated_data[key][5:]
+                shutil.move(replicated_data[key], self.data[key])
                 to_remove.append(key)
             
             # Check if we can clean up this replica
@@ -162,6 +177,7 @@ class DHT:
                         to_remove.append(key)
 
         for key in to_remove:
+            os.remove(self.rep_data[key])
             del self.rep_data[key]
 
 
