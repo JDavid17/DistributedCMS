@@ -16,7 +16,7 @@ CHECK_REP_WAIT = 1  # Time to wait to check replicated data (seconds)
 
 MERGE_WAIT = 1  # Time to wait to check for posible merge (seconds)
 
-IP = "10.6.98.209"  # IP to Chord node
+GATEWAY_IP = "10.6.98.209"  # IP to Chord node
 
-PORT = 22220  # Port to Chord Node
+GATEWAY_PORT = 22220  # Port to Chord Node
 

@@ -10,7 +10,7 @@ from flask import render_template
 from flask import request
 # from DHT.chord import ChordNode
 from ckey import *
-from settings import IP, PORT
+from settings import GATEWAY_IP, GATEWAY_PORT
 from api import set_to_dht, get_to_dht, get_all
 
 import forms
@@ -36,7 +36,7 @@ html_end = """
 
 http = urllib3.PoolManager()
 
-key = ChordKey(IP, PORT)
+key = ChordKey(GATEWAY_IP, GATEWAY_PORT)
 dht_uri = "PYRO:DHT_{}@{}:{}".format(key.id, key.ip, key.port)
 
 
@@ -111,7 +111,7 @@ def new_page():
 @app.route("/pages")
 def pages():
     title = "Pages"
-    r = http.request('GET', 'http://localhost:5000/pages.json')
+    r = http.request('GET', 'http://{}:5000/pages.json'.format(GATEWAY_IP))
     # print("status " + str(r.status))
     # print("data " + str(r.data))
     content = json.loads(r.data.decode('utf-8'))

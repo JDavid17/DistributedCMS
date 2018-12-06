@@ -17,3 +17,7 @@ test.py
 *.pyc
 
 */__pycache__
+
+/data
+
+/rep
