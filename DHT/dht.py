@@ -79,17 +79,24 @@ class DHT:
     def get_all(self, tipo):
         # Returns all data store in every DHT node
         return_data = {}
+        succ = self.Node
+        with remote(succ, isDHT=True) as succDHT:
+            for item in succDHT.database:
+                if not return_data.__contains__(succDHT.database[item]['key']) and succDHT.database[item]['type'] == tipo:
+                    return_data[item] = succDHT.database[item]
 
-        for suc in self.Node.successors:  # NEED FIX
-            if ping(suc):
+        succ = self.Node.find_successor()
+
+        while succ.id != self.Node.id:
+            if ping(succ):
                 with remote(suc, isDHT=True) as succDHT:
                     for item in succDHT.database:
                         if not return_data.__contains__(succDHT.database[item]['key']) and succDHT.database[item]['type'] == tipo:
                             return_data[item] = succDHT.database[item]
+                succ = succDHT.Node
             else:
                 log("Lost Node {}".format(suc))
 
-        print(return_data)
         return return_data
 
     @Pyro4.expose
