@@ -188,4 +188,4 @@ def widgets_json():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='10.6.98.209')
+    app.run(debug=True, host='10.6.98.193')

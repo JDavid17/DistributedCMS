@@ -10,6 +10,7 @@ import json
 import os
 import shutil
 import sys
+import glob
 
 
 class DHT:
@@ -19,6 +20,14 @@ class DHT:
         self.data = {}
         self.rep_data = {}
         self.isRunning = False
+
+        os.chdir("data/")
+        for file in glob.glob("*"):
+            self.data[file.title().lower()] = "data/{}".format(file.title().lower())
+
+        # os.chdir("../rep/")
+        # for file in glob.glob("*"):
+        #    self.rep_data[file.title().lower()] = "rep/{}".format(file.title().lower())
 
     @property
     @Pyro4.expose
@@ -196,7 +205,7 @@ class DHT:
 
 if __name__ == "__main__":
     sys.excepthook = Pyro4.util.excepthook
-    host =  input()
+    host = input()
     port = input()
 
     rhost = host
@@ -211,7 +220,7 @@ if __name__ == "__main__":
         cmd = input("-")
         l = cmd.split()
         if l[0] == "join":
-            d.Node.join("localhost", l[1])
+            d.Node.join(l[1], l[2])
         if l[0] == "set":
             log(d.set(hash(l[1]), l[2]))
         if l[0] == "get":
