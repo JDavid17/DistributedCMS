@@ -1,4 +1,4 @@
-from DHT.settings import *
+from settings import *
 import hashlib
 
 def sumHexInt(hex, integer):

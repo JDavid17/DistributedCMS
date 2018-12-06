@@ -1,8 +1,7 @@
-from DHT.settings import *
-from DHT.ckey import *
+from settings import *
+from ckey import *
 import time
 import Pyro4
-
 
 def ping(key, isDHT=False):
     try:
@@ -17,6 +16,13 @@ def ping(key, isDHT=False):
             return False
     return True
 
+def history_contains(id, history):
+    for node in history:
+        # print(node)
+        if id == node.id:
+            return True
+
+    return False
 
 def reconnected(proxy):
     # If cant create a proxy then it might be a temporary network error

@@ -8,8 +8,9 @@ from bs4 import BeautifulSoup
 from flask import Flask
 from flask import render_template
 from flask import request
-from DHT.chord import *
-from DHT.ckey import hash
+# from DHT.chord import ChordNode
+from ckey import *
+from settings import IP, PORT
 from api import set_to_dht, get_to_dht, get_all
 
 import forms
@@ -35,6 +36,9 @@ html_end = """
 
 http = urllib3.PoolManager()
 
+key = ChordKey(IP, PORT)
+dht_uri = "PYRO:DHT_{}@{}:{}".format(key.id, key.ip, key.port)
+
 
 @app.route("/")
 def index():
@@ -59,7 +63,7 @@ def new_widget():
             "type": "widget",
             "data": "{}".format(widget.html.data)
         }
-        set_to_dht("PYRO:DHT_2@localhost:10000", widget.name.data, data)
+        set_to_dht(dht_uri, widget.name.data, data)
 
     title = "New Widget"
     return render_template("widget.html", title=title, form=widget)
@@ -81,8 +85,7 @@ def new_page():
             "type": "page",
             "data": "{}".format(soup)
         }
-        set_to_dht("PYRO:DHT_2@localhost:10000", page.title.data, data)
-        pass
+        set_to_dht(dht_uri, page.title.data, data)
 
     os.chdir(cwd)
     title = "New Page"
@@ -101,7 +104,7 @@ def new_page():
         temp.close()
 
     # Search for all widgets
-    dht_bs4_widgets = get_all("PYRO:DHT_2@localhost:10000", str_widget)
+    dht_bs4_widgets = get_all(dht_uri, str_widget)
     return render_template("page.html", form=page, title=title, widgets=dht_bs4_widgets)
 
 
@@ -132,7 +135,6 @@ def pages():
 @app.route("/pages.json", methods=['GET', 'POST'])
 def pages_json():
     tipo = 'page'
-    uri = "PYRO:DHT_2@localhost:10000"
 
     if request.method == 'POST':
         # print("checking json: " + str(request.is_json))
@@ -149,7 +151,7 @@ def pages_json():
                 'type': type,
                 'data': pretty_data
             }
-            set_to_dht("PYRO:DHT_2@localhost:10000", key, data)
+            set_to_dht(dht_uri, key, data)
 
         return json.dumps({'status': 'OK', 'key': key, 'type': type, 'data': data})
     else:
@@ -169,9 +171,8 @@ def pages_json():
 @app.route("/widgets.json", methods=['GET', 'POST'])
 def widgets_json():
     tipo = 'widget'
-    uri = "PYRO:DHT_2@localhost:10000"
     try:
-        with Pyro4.Proxy(uri) as obj:
+        with Pyro4.Proxy(dht_uri) as obj:
             widgets = obj.get_all(tipo)
             response = app.response_class(
                 response=json.dumps(widgets),

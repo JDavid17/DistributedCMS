@@ -1,10 +1,10 @@
-from DHT.ckey import *
-from DHT.settings import *
-from DHT.network import *
-from DHT.log import *
+from ckey import *
+from settings import *
+from network import *
+from log import *
 import Pyro4
 import threading
-
+import random
 
 @Pyro4.expose
 class ChordNode:
@@ -12,7 +12,8 @@ class ChordNode:
 
         self.next = -1
         self.finger = [None for i in range(M)]
-        # TODO: Implement a separate class for chord id
+        # TODO: Implement a separate class for chord id'
+        self._history = []
         self._key = ChordKey(ip, port)
         self._successors = [None]
         self._predecessor = None
@@ -21,6 +22,10 @@ class ChordNode:
     @property
     def key(self):
         return self._key
+
+    @property
+    def history(self):
+        return self._history
 
     @property
     def id(self):
@@ -61,6 +66,7 @@ class ChordNode:
                         gatewayNode.predecessor = self.key
 
                         gatewayNode.start()
+
                     else:
                         self._successors[0] = gatewayNode.find_successor(self.id)
                 log("Joining Chord through node %s:" % gwnodeKey.id)
@@ -73,7 +79,13 @@ class ChordNode:
             if ping(suc):
                 return suc
             else:
-                log("Node {} is gone".format(suc))
+                if not history_contains(suc.id, self.history):
+                    if len(self.history) < 100:
+                        self.history.append(suc)
+                    else:
+                        self.history.pop(random.randint(0, 99))
+                        self.history.append(suc)
+                # log("Node {} is gone".format(suc))
         log("No successor was found for Node " + self.id)
 
     def find_successor(self, key):
@@ -121,8 +133,51 @@ class ChordNode:
         # log("updating successors list")
         if self.id != self.successor().id:
             newsuclist += remote(newsuclist[0]).successors[:N_SUCCESSORS - 1]
+            for newnode in newsuclist:
+                if not history_contains(newnode.id, self.history):
+                    if len(self.history) < 100:
+                        self.history.append(newnode)
+                    else:
+                        self.history.pop(random.randint(0, 99))
+                        self.history.append(newnode)
             self._successors = newsuclist
         # log("successorlist: ", self.successors, "\n")
+
+    def resolve_maxkey(self):
+        suc = self.successor()
+        maxkey = self.key
+        while suc.id != self.id:
+            with remote(suc) as succ:
+                if int(succ.id, 16) > int(maxkey.id, 16):
+                    maxkey = suc
+                suc = succ.successor()
+        return maxkey
+
+    @repeat_wait(MERGE_WAIT)
+    def merge_ring(self):
+        # print("Try to merge")
+        for node in self.history:
+            if node.id != self.id:
+                # print("checkin node {}".format(node))
+                if ping(node):
+                    with remote(node) as chord_node:
+                        chord_nodemx = chord_node.resolve_maxkey()
+                        selfmx = self.resolve_maxkey()
+                        if int(chord_nodemx.id, 16) == int(selfmx.id, 16):
+                            # print("Same Ring returning")
+                            return
+                        else:
+                            if int(chord_nodemx.id, 16) > int(selfmx.id, 16):
+                                with remote(selfmx) as obj:
+                                    print("Preform Join Action with localhost:{}".format(chord_nodemx.port))
+                                    obj.join(chord_nodemx.ip, chord_nodemx.port)
+                            else:
+                                with remote(chord_nodemx) as obj:
+                                    print("Preform Join Action with localhost:{}".format(selfmx.port))
+                                    obj.join(selfmx.ip, selfmx.port)
+
+                else:
+                    print("Node {} is still dead".format(str(node)))
 
     @repeat_wait(FFINGERS_WAIT)
     def fix_fingers(self):
@@ -130,6 +185,12 @@ class ChordNode:
         if self.next >= M:
             self.next = 0
         self.finger[self.next] = self.find_successor(intToKey(sumHexInt(self.id, 2 ** self.next) % 2 ** M, M))
+        if not history_contains(self.finger[self.next].id, self.history):
+            if len(self.history) < 100:
+                self.history.append(self.finger[self.next])
+            else:
+                self.history.pop(random.randint(0, 99))
+                self.history.append(self.finger[self.next])
 
     def start(self):
         if not self.running:
@@ -140,6 +201,10 @@ class ChordNode:
             t.start()
 
             t = threading.Thread(target=self.stabilize)
+            t.daemon = True
+            t.start()
+
+            t = threading.Thread(target=self.merge_ring)
             t.daemon = True
             t.start()
 
@@ -179,6 +244,8 @@ if __name__ == "__main__":
         l = cmd.split()
         if l[0] == "join":
             node.join("localhost", l[1])
+        if l[0] == "get_history":
+            print(node.hisotry)
 
 # # TESTS
 # 10000 #2

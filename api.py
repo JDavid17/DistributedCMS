@@ -1,5 +1,5 @@
-from DHT.ckey import hash
-from DHT.network import ping
+from dht import *
+from chord import *
 import Pyro4
 
 
