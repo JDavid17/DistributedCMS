@@ -129,14 +129,48 @@ class ChordNode:
         # log("updating successors list")
         if self.id != self.successor().id:
             newsuclist += remote(newsuclist[0]).successors[:N_SUCCESSORS - 1]
+            for newnode in newsuclist:
+                if not self.history.__contains__(newnode):
+                    if len(self.history) < 100:
+                        self.history.append(newnode)
+                    else:
+                        self.history.pop(random.randint(0, 99))
+                        self.history.append(newnode)
             self._successors = newsuclist
         # log("successorlist: ", self.successors, "\n")
+
+    def resolve_maxkey(self):
+        suc = self.successor()
+        maxkey = self.key
+        while suc.id != self.id:
+            with remote(suc) as succ:
+                if int(succ.id, 16) > int(maxkey.id, 16):
+                    maxkey = suc
+                suc = succ.successor()
+        return maxkey
 
     @repeat_wait(STABILIZE_WAIT)
     def merge_ring(self):
         for node in self.history:
             if ping(node):
-                print("Posibly Can Merge")
+                with remote(node) as chord_node:
+                    chord_nodemx = chord_node.resolve_maxkey()
+                    selfmx = self.resolve_maxkey()
+                    if int(chord_nodemx.id, 16) == int(selfmx.id, 16):
+                        return
+                    else:
+                        print(chord_nodemx)
+                        print(selfmx)
+                        # ch_succ = node.successor()
+                        # self_succ = self.successor()
+                        #
+                        # if int(chord_nodemx.id, 16) > int(selfmx.id, 16):
+                        #     ch_succlist = [self_succ]
+                        #     self_succlist = [chord_nodemx]
+                        # else:
+                        #     ch_succlist = [chord_nodemx]
+                        #     self_succlist = [self_succ]
+
             else:
                 print("Node {} is still dead".format(str(node)))
 
@@ -146,6 +180,12 @@ class ChordNode:
         if self.next >= M:
             self.next = 0
         self.finger[self.next] = self.find_successor(intToKey(sumHexInt(self.id, 2 ** self.next) % 2 ** M, M))
+        if not self.history.__contains__(self.finger[self.next]):
+            if len(self.history) < 100:
+                self.history.append(self.finger[self.next])
+            else:
+                self.history.pop(random.randint(0, 99))
+                self.history.append(self.finger[self.next])
 
     def start(self):
         if not self.running:
