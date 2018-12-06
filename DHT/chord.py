@@ -4,7 +4,7 @@ from network import *
 from log import *
 import Pyro4
 import threading
-
+import random
 
 @Pyro4.expose
 class ChordNode:
@@ -159,8 +159,15 @@ class ChordNode:
                     if int(chord_nodemx.id, 16) == int(selfmx.id, 16):
                         return
                     else:
-                        print(chord_nodemx)
-                        print(selfmx)
+                        if int(chord_nodemx.id, 16) > int(selfmx.id, 16):
+                            with remote(selfmx) as obj:
+                                print("Preform Join Action with localhost:{}".format(chord_nodemx.port))
+                                obj.join('localhost', chord_nodemx.port)
+                        else:
+                            with remote(chord_nodemx) as obj:
+                                print("Preform Join Action with localhost:{}".format(selfmx.port))
+                                obj.join('localhost', selfmx.port)
+
                         # ch_succ = node.successor()
                         # self_succ = self.successor()
                         #

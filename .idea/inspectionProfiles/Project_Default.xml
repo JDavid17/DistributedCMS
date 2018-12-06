@@ -7,6 +7,7 @@
     <inspection_tool class="HtmlUnknownTarget" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="JSJQueryEfficiency" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="JSUnresolvedFunction" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="PyAssignmentToLoopOrWithParameterInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="PyAttributeOutsideInitInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="PyBroadExceptionInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="PyNoneFunctionAssignmentInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
