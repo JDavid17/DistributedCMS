@@ -48,14 +48,14 @@ def index():
 
 @app.route("/new_widget", methods=['GET', 'POST'])
 def new_widget():
-    os.chdir(cwd)
-    os.chdir("widgets")
+    # os.chdir(cwd)
+    # os.chdir("widgets")
     widget = forms.Widget(request.form)
     if request.method == 'POST' and widget.validate():
         # Local Storage
-        folder = open("{}.txt".format(widget.name.data), "w")
-        folder.write("{}".format(widget.html.data))
-        folder.close()
+        # folder = open("{}.txt".format(widget.name.data), "w")
+        # folder.write("{}".format(widget.html.data))
+        # folder.close()
 
         # DHT Storge
         data = {
@@ -75,11 +75,11 @@ def new_page():
     if request.method == 'POST':
         doc = html_head + page.code.data + html_end
         soup = BeautifulSoup(doc, 'html.parser').prettify()
-        os.chdir(cwd)
-        os.chdir("templates/pages")
-        folder = open("{}.html".format(page.title.data), "w")
-        folder.write("{}".format(soup))
-        folder.close()
+        # os.chdir(cwd)
+        # os.chdir("templates/pages")
+        # folder = open("{}.html".format(page.title.data), "w")
+        # folder.write("{}".format(soup))
+        # folder.close()
         data = {
             "key": "{}".format(page.title.data),
             "type": "page",
@@ -87,21 +87,21 @@ def new_page():
         }
         set_to_dht(dht_uri, page.title.data, data)
 
-    os.chdir(cwd)
+    # os.chdir(cwd)
     title = "New Page"
     # soup = BeautifulSoup(html_doc, 'html.parser').prettify()
 
-    # Search for local widgets
-    local_bs4_widgets = []
-    os.chdir("widgets")
-    for file in glob.glob("*.txt"):
-        temp = open("{}".format(file), "r")
-        local_bs4_widgets.append({
-            "key": "{}".format(file.title().split(".")[0]),
-            "type": "widget",
-            "data": "{}".format(BeautifulSoup(temp.read(), 'html.parser').prettify())
-        })
-        temp.close()
+    # # Search for local widgets
+    # local_bs4_widgets = []
+    # os.chdir("widgets")
+    # for file in glob.glob("*.txt"):
+    #     temp = open("{}".format(file), "r")
+    #     local_bs4_widgets.append({
+    #         "key": "{}".format(file.title().split(".")[0]),
+    #         "type": "widget",
+    #         "data": "{}".format(BeautifulSoup(temp.read(), 'html.parser').prettify())
+    #     })
+    #     temp.close()
 
     # Search for all widgets
     dht_bs4_widgets = get_all(dht_uri, str_widget)
@@ -139,12 +139,11 @@ def pages_json():
     if request.method == 'POST':
         # print("checking json: " + str(request.is_json))
         resp = request.get_json()
-        print(resp)
         id = resp['id']
         key = resp['key']
         data = resp['data']
         type = resp['type']
-        with Pyro4.Proxy(uri) as obj:
+        with Pyro4.Proxy(dht_uri) as obj:
             pretty_data = BeautifulSoup(data, "html.parser").prettify()
             data = {
                 'key': key,
@@ -156,7 +155,7 @@ def pages_json():
         return json.dumps({'status': 'OK', 'key': key, 'type': type, 'data': data})
     else:
         try:
-            with Pyro4.Proxy(uri) as obj:
+            with Pyro4.Proxy(dht_uri) as obj:
                 pages = obj.get_all(tipo)
                 response = app.response_class(
                     response=json.dumps(pages),
@@ -164,7 +163,7 @@ def pages_json():
                     mimetype='application/json'
                 )
         except Pyro4.errors.CommunicationError:
-            print("Unable to Connect to node in URI: {}".format(uri))
+            print("Unable to Connect to node in URI: {}".format(dht_uri))
     return response
 
 
@@ -180,7 +179,7 @@ def widgets_json():
                 mimetype='application/json'
             )
     except Pyro4.errors.CommunicationError:
-        print("Unable to Connect to node in URI: {}".format(uri))
+        print("Unable to Connect to node in URI: {}".format(dht_uri))
 
     return response
 
@@ -189,4 +188,4 @@ def widgets_json():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='10.6.98.209')

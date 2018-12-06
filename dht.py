@@ -85,22 +85,26 @@ class DHT:
     def get_all(self, tipo):
         # Returns all data store in every DHT node
         return_data = {}
-        for item in self.database:
-            if not return_data.__contains__(self.database[item]['key']) and self.database[item]['type'] == tipo:
-                return_data[item] = self.database[item]
+        for key in self.data:
+            with open(self.data[key], 'r') as file:
+                data = file.read()
+                data = json.loads(data)
+            if not return_data.__contains__(data['key']) and data['type'] == tipo:
+                return_data[key] = self.get(key)
 
         succ = self.Node.successor()
 
         while succ.id != self.Node.id:
             if ping(succ):
                 with remote(succ, isDHT=True) as succDHT:
-                    for item in succDHT.database:
-                        if not return_data.__contains__(succDHT.database[item]['key']) and succDHT.database[item]['type'] == tipo:
-                            return_data[item] = succDHT.database[item]
+                    for key in succDHT.database:
+                        data = succDHT.get(key)
+                        if not return_data.__contains__(data['key']) and data['type'] == tipo:
+                            return_data[key] = succDHT.get(key)
                     with remote(succ) as next:
                         succ = next.successor()
             else:
-                log("Lost Node {}".format(suc))
+                log("Lost Node {}".format(succ))
 
         return return_data
 
@@ -192,7 +196,7 @@ class DHT:
 
 if __name__ == "__main__":
     sys.excepthook = Pyro4.util.excepthook
-    host = "localhost"
+    host =  input()
     port = input()
 
     rhost = host
