@@ -21,9 +21,9 @@ class DHT:
         self.rep_data = {}
         self.isRunning = False
 
-        os.chdir("data/")
-        for file in glob.glob("*"):
-            self.data[file.title().lower()] = "data/{}".format(file.title().lower())
+        # os.chdir("data/")
+        # for file in glob.glob("*"):
+        #    self.data[file.title().lower()] = "data/{}".format(file.title().lower())
 
         # os.chdir("../rep/")
         # for file in glob.glob("*"):
