@@ -87,6 +87,7 @@ class ChordNode:
                         self.history.append(suc)
                 # log("Node {} is gone".format(suc))
         log("No successor was found for Node " + self.id)
+        raise Exception()
 
     def find_successor(self, key):
         n = self.find_predecessor(key)
@@ -95,8 +96,11 @@ class ChordNode:
     def find_predecessor(self, key):
         if self.id == self._successors[0].id:
             return self.key
-        currentNode = self.key
-        while True:
+
+        currentNode = self.successor()
+        if betweenclosedopen(key, self.id, currentNode.id):
+            return self.key
+        while currentNode.id != self.id:
             with remote(currentNode) as n:
                 if betweenclosedopen(key, n.id, n.successor().id):
                     break
@@ -117,7 +121,7 @@ class ChordNode:
     @repeat_wait(STABILIZE_WAIT)
     def stabilize(self):
         # log("+++ Stabilizing")
-        # log_node(self)
+        log_node(self)
 
         suc = self.successor()
         # log("current successor: ", str(suc))
@@ -128,20 +132,21 @@ class ChordNode:
             if self._successors[0].id == successorNode.id and betweenclosedclosed(x.id, self.id, successorNode.id):
                 newsuclist = [x]
             with remote(newsuclist[0]) as newSuccessor:
+                # log("updating successors list")
+                newsuclist += newSuccessor.successors[:N_SUCCESSORS - 1]
+                self._successors = newsuclist
+                # log("successorlist: ", self.successors, "\n")
                 newSuccessor.notify(self.key)
 
-        # log("updating successors list")
-        if self.id != self.successor().id:
-            newsuclist += remote(newsuclist[0]).successors[:N_SUCCESSORS - 1]
-            for newnode in newsuclist:
-                if not history_contains(newnode.id, self.history):
-                    if len(self.history) < 100:
-                        self.history.append(newnode)
-                    else:
-                        self.history.pop(random.randint(0, 99))
-                        self.history.append(newnode)
-            self._successors = newsuclist
-        # log("successorlist: ", self.successors, "\n")
+                # Regiser all the successors so we can merge the system splits into partitions  
+                for newnode in newsuclist:
+                    if not history_contains(newnode.id, self.history):
+                        if len(self.history) < 100:
+                            self.history.append(newnode)
+                        else:
+                            self.history.pop(random.randint(0, 99))
+                            self.history.append(newnode)
+
 
     def resolve_maxkey(self):
         suc = self.successor()
@@ -167,20 +172,20 @@ class ChordNode:
                             # print("Same Ring returning")
                             return
                         else:
+                            log("Found a peer from another chord ring: ", node.id)
                             if int(chord_nodemx.id, 16) > int(selfmx.id, 16):
                                 with remote(selfmx) as obj:
-                                    print("Preform Join Action with localhost:{}".format(chord_nodemx.port))
+                                    print("Joining the their ring through gateway {}:{}".format(chord_nodemx.ip, chord_nodemx.port))
                                     obj.join(chord_nodemx.ip, chord_nodemx.port)
                             else:
                                 with remote(chord_nodemx) as obj:
-                                    print("Preform Join Action with localhost:{}".format(selfmx.port))
+                                    print("Making the peer join our ring through this address {}:{}".format(selfmx.ip, selfmx.port))
                                     obj.join(selfmx.ip, selfmx.port)
 
-                else:
-                    print("Node {} is still dead".format(str(node)))
 
     @repeat_wait(FFINGERS_WAIT)
     def fix_fingers(self):
+        # log("fixing fingers")
         self.next = self.next + 1
         if self.next >= M:
             self.next = 0
