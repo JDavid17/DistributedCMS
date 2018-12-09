@@ -48,6 +48,8 @@ def repeat_wait(waitTime):
     def decorator(func):
         def inner(self, *args, **kwargs):
             while True:
+                if not self.running:
+                    break
                 try:
                     func(self, *args, **kwargs)
                 except Pyro4.errors.CommunicationError:

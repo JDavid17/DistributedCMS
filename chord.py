@@ -5,6 +5,7 @@ from log import *
 import Pyro4
 import threading
 import random
+import time
 
 @Pyro4.expose
 class ChordNode:
@@ -52,6 +53,8 @@ class ChordNode:
         return self._running
 
     def join(self, ip=None, port=None):
+        self._running = False
+        time.sleep(SHUTDOWN_WAIT)
         if not ip or not port:
             self._successors[0] = self.predecessor = self.key
         else:
@@ -118,6 +121,17 @@ class ChordNode:
                 self.predecessor):
             self.predecessor = predKey
 
+    def resolve_maxkey(self):
+        suc = self.successor()
+        maxkey = self.key
+        while suc.id != self.id:
+            with remote(suc) as succ:
+                if int(succ.id, 16) > int(maxkey.id, 16):
+                    maxkey = suc
+                suc = succ.successor()
+        return maxkey
+
+
     @repeat_wait(STABILIZE_WAIT)
     def stabilize(self):
         # log("+++ Stabilizing")
@@ -129,7 +143,7 @@ class ChordNode:
 
         with remote(suc) as successorNode:
             x = successorNode.predecessor
-            if self._successors[0].id == successorNode.id and betweenclosedclosed(x.id, self.id, successorNode.id):
+            if betweenclosedclosed(x.id, self.id, successorNode.id):
                 newsuclist = [x]
             with remote(newsuclist[0]) as newSuccessor:
                 # log("updating successors list")
@@ -138,7 +152,7 @@ class ChordNode:
                 # log("successorlist: ", self.successors, "\n")
                 newSuccessor.notify(self.key)
 
-                # Regiser all the successors so we can merge the system splits into partitions  
+                # Registser all the successors so we can merge if the system splits into partitions  
                 for newnode in newsuclist:
                     if not history_contains(newnode.id, self.history):
                         if len(self.history) < 100:
@@ -147,16 +161,6 @@ class ChordNode:
                             self.history.pop(random.randint(0, 99))
                             self.history.append(newnode)
 
-
-    def resolve_maxkey(self):
-        suc = self.successor()
-        maxkey = self.key
-        while suc.id != self.id:
-            with remote(suc) as succ:
-                if int(succ.id, 16) > int(maxkey.id, 16):
-                    maxkey = suc
-                suc = succ.successor()
-        return maxkey
 
     @repeat_wait(MERGE_WAIT)
     def merge_ring(self):
@@ -190,12 +194,15 @@ class ChordNode:
         if self.next >= M:
             self.next = 0
         self.finger[self.next] = self.find_successor(intToKey(sumHexInt(self.id, 2 ** self.next) % 2 ** M, M))
+
+        # Register my fingers to the nodes history
         if not history_contains(self.finger[self.next].id, self.history):
             if len(self.history) < 100:
                 self.history.append(self.finger[self.next])
             else:
                 self.history.pop(random.randint(0, 99))
                 self.history.append(self.finger[self.next])
+
 
     def start(self):
         if not self.running:
@@ -214,9 +221,10 @@ class ChordNode:
             t.start()
 
     def shutdown(self):
-        pass
+        self._running = False
 
 
+# TESTINGS
 def start_new_node(node, ip, port):
     with Pyro4.Daemon(host=host, port=int(port)) as daemon:
         uri = daemon.register(node, objectId=node.id)
