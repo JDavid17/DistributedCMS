@@ -245,7 +245,7 @@ if __name__ == "__main__":
         if l[0] == "join":
             node.join("localhost", l[1])
         if l[0] == "get_history":
-            print(node.hisotry)
+            print(node.history)
 
 # # TESTS
 # 10000 #2
