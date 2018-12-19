@@ -6,17 +6,17 @@ import Pyro4
 def set_to_dht(uri, key, data):
     try:
         with Pyro4.Proxy(uri) as obj:
-            print("Succesfuly connected to node, through URI: {}".format(uri))
             obj.set(hash(key), data)
+            print("Succesfuly connected to node, through URI: {}".format(uri))
     except Pyro4.errors.CommunicationError:
-        print("Unable to Connect to node in URI: {}".format(uri))
+        print("Unable to Connect to DHT through URI: {}".format(uri))
 
 def get_to_dht(key, uri):
     try:
         with Pyro4.Proxy(uri) as obj:
             obj.get(hash(key))
     except Pyro4.errors.CommunicationError:
-        print("Unable to Connect to node in URI: {}".format(uri))
+        print("Unable to Connect to DHT through URI: {}".format(uri))
 
 def get_all(uri, type):
     try:
@@ -25,7 +25,7 @@ def get_all(uri, type):
             return obj.get_all(type)
             # custom_successors(obj.node)
     except Pyro4.errors.CommunicationError:
-        print("Unable to Connect to node in URI: {}".format(uri))
+        print("Unable to Connect to DHT through URI: {}".format(uri))
 
 
 # def custom_successors(node):

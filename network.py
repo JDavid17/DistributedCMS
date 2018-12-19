@@ -48,7 +48,7 @@ def repeat_wait(waitTime):
     def decorator(func):
         def inner(self, *args, **kwargs):
             while True:
-                if not self.running:
+                if self.__dict__.keys().__contains__("running") and not self.running:
                     break
                 try:
                     func(self, *args, **kwargs)

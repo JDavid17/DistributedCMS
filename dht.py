@@ -228,7 +228,7 @@ if __name__ == "__main__":
         if l[0] == "get_all_page":
             log(d.get_all('page'))
         if l[0] == "get_all_widget":
-            log(d.get(hash('widget')))
+            log(d.get_all('widget'))
         if l[0] == "get_history":
             log(d.Node.history)
         if cmd == "":
