@@ -83,7 +83,7 @@ class DHT:
                 data = file.read()
                 return json.loads(data)
         except Exception:
-            if betweenclosedopen(key, self.Node.predecessor.id, self.Node.id):
+            if betweenclosedopen(key, self.Node.predecessor.id, self.Node.id) or self.Node.successor().id == self.Node.id:
                 # We dont have the data yet
                 return None
             succ = self.Node.find_successor(key)  # *****
@@ -133,14 +133,13 @@ class DHT:
 
     @Pyro4.expose
     def take_replica(self, key, value):
+        with open("rep/" + key, 'w') as file:
+            file.write(value)
         self.rep_data[key] = "rep/" + key
-        file = open(self.rep_data[key], 'w')
-        file.write(json.dumps(value))
-        file.close()
 
     @repeat_wait(DISTRIBUTE_WAIT)
     def distribute_data(self):
-        if not self.Node.running or self.Node.id == self.Node.successor():
+        if not self.Node.running or self.Node.id == self.Node.successor().id:
             # No need to migrate data if the system has 1 Node or hasn't started
             return
 
@@ -163,7 +162,7 @@ class DHT:
 
     @repeat_wait(REPLICATE_WAIT)
     def replicate_data(self):
-        if not self.Node.running or self.Node.id == self.Node.successor():
+        if not self.Node.running or self.Node.id == self.Node.successor().id:
             # Do not replicate if the system has 1 Node or hasn't started
             return
 
@@ -174,7 +173,7 @@ class DHT:
                             isDHT=True) as succ:  # Push replicas to multiple successors ? 2 replicas enough ?
                     with open(to_replicate[key], 'r') as file:
                         x = file.read()
-                        succ.take_replica(key, json.dumps(x))
+                        succ.take_replica(key, x)
 
     @repeat_wait(CHECK_REP_WAIT)
     def check_replicas(self):
@@ -185,10 +184,11 @@ class DHT:
         to_remove = []
         for key in replicated_data.keys():
             # Check if we must take over this replica in case the owner left the system
-            if betweenclosedopen(key, self.Node.predecessor.id, self.Node.id):
+            if self.Node.id == self.Node.successor().id or betweenclosedopen(key, self.Node.predecessor.id, self.Node.id):
                 # We are now responsible for this data
                 self.data[key] = "data/" + replicated_data[key][4:]
-                shutil.move(replicated_data[key], self.data[key])
+                shutil.copy(replicated_data[key], self.data[key])
+                log("Taking charge of key " + key)
                 to_remove.append(key)
 
             # Check if we can clean up this replica
@@ -219,6 +219,8 @@ if __name__ == "__main__":
     while True:
         cmd = input("-")
         l = cmd.split()
+        if l[0] == "info":
+            log_node(d.Node)
         if l[0] == "join":
             d.Node.join(l[1], l[2])
         if l[0] == "set":

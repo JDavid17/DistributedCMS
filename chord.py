@@ -135,7 +135,7 @@ class ChordNode:
     @repeat_wait(STABILIZE_WAIT)
     def stabilize(self):
         # log("+++ Stabilizing")
-        log_node(self)
+        # log_node(self)
 
         suc = self.successor()
         # log("current successor: ", str(suc))
@@ -143,7 +143,7 @@ class ChordNode:
 
         with remote(suc) as successorNode:
             x = successorNode.predecessor
-            if betweenclosedclosed(x.id, self.id, successorNode.id):
+            if self.successors[0].id == suc.id and betweenclosedclosed(x.id, self.id, successorNode.id):
                 newsuclist = [x]
             with remote(newsuclist[0]) as newSuccessor:
                 # log("updating successors list")
